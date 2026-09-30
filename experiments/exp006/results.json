@@ -1,0 +1,68 @@
+{
+  "exp_id": "exp006",
+  "origin": "human",
+  "parent": "expA005",
+  "created_at": "2026-10-01T08:37:16+09:00",
+  "git_hash": "1d79eb8",
+  "hypothesis": "PassengerId から作る GroupSize を v1 に加えると、CatBoost の CV が expA005 より上がる",
+  "changes": "src/features.py の v1 に GroupSize を追加。モデルと CV は expA005 と同じ",
+  "model": "CatBoost",
+  "config": {
+    "extra_features": [
+      "GroupSize"
+    ],
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "inner_splits": 5,
+    "catboost": {
+      "iterations": 10000,
+      "learning_rate": 0.05,
+      "eval_metric": "AUC",
+      "early_stopping_rounds": 200,
+      "verbose": 0
+    }
+  },
+  "metric": {
+    "name": "accuracy",
+    "direction": "maximize"
+  },
+  "cv": {
+    "scheme": "group-stratified-5fold-x3-seed012",
+    "mean": 0.8144113275250017,
+    "std": 0.004407580932198353,
+    "folds": [
+      0.8083763625932301,
+      0.8130034522439585,
+      0.8123200921128382,
+      0.8170310701956272,
+      0.819804260218768,
+      0.8170310701956272,
+      0.8109195402298851,
+      0.810126582278481,
+      0.8125359401955147,
+      0.8233601841196778,
+      0.8200115008625647,
+      0.816561242093157,
+      0.807825086306099,
+      0.8159861989649224,
+      0.8112773302646721
+    ]
+  },
+  "lb": {
+    "public": null,
+    "private": null
+  },
+  "train_time_sec": 190.0,
+  "status": "done",
+  "conclusion": "GroupSize を追加。CV 0.8144 ± 0.0044 で expA005 より -0.0008（同じ fold どうしの差の標準誤差 0.0009、改善は 15 fold 中 5 fold）。CV を上げる効果は見られない。7通りのどれも expA005 を有意に上回らず、Group と GroupSize を同時に入れると下がる傾向がある。採否は人間が判断する",
+  "tags": [
+    "catboost",
+    "group-cv",
+    "honest-es",
+    "repeated-cv",
+    "feature-v2-candidate"
+  ]
+}
