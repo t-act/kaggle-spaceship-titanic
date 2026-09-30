@@ -1,0 +1,19 @@
+origin: human
+parent: expA005
+hypothesis: "PassengerId から作る Solo を v1 に加えると、CatBoost の CV が expA005 より上がる"
+changes: "src/features.py の v1 に Solo を追加。モデルと CV は expA005 と同じ"
+model: CatBoost
+tags: [catboost, group-cv, honest-es, repeated-cv, feature-v2-candidate]
+
+params:
+  # src/features.py の EXTRA_FEATURES から選ぶ。v1 の14列は固定
+  extra_features: [Solo]
+  seeds: [0, 1, 2]
+  # 学習側の 1/inner_splits を木の数を決めるための内側の検証に使う
+  inner_splits: 5
+  catboost:
+    iterations: 10000
+    learning_rate: 0.05
+    eval_metric: AUC
+    early_stopping_rounds: 200
+    verbose: 0
