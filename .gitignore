@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+.ipynb_checkpoints/
+
+# Kaggle から取得するデータと生成物
+data/
+submissions/
