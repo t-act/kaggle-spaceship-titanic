@@ -1,0 +1,82 @@
+{
+  "exp_id": "expA005",
+  "origin": "claude",
+  "parent": "expA004",
+  "created_at": "2026-09-30T21:43:24+09:00",
+  "git_hash": "e972774",
+  "hypothesis": "固定分割 seed=123 は当たりの分割で CV が高めに出ている。分割 seed 3つの repeated CV で平均すると、CV はさらに下がって LB（expA002 は 0.80827）に近づく",
+  "changes": "expA004 と同じモデルで、CV を分割 seed 3つ（0, 1, 2）の repeated group CV に変更",
+  "model": "CatBoost",
+  "config": {
+    "features": [
+      "Age",
+      "TotalSpend",
+      "HomePlanet",
+      "CryoSleep",
+      "Destination",
+      "VIP",
+      "Deck",
+      "Num",
+      "Side",
+      "RoomService",
+      "FoodCourt",
+      "ShoppingMall",
+      "Spa",
+      "VRDeck"
+    ],
+    "logical_imputation": false,
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "inner_splits": 5,
+    "catboost": {
+      "iterations": 10000,
+      "learning_rate": 0.05,
+      "eval_metric": "AUC",
+      "early_stopping_rounds": 200,
+      "verbose": 0
+    }
+  },
+  "metric": {
+    "name": "accuracy",
+    "direction": "maximize"
+  },
+  "cv": {
+    "scheme": "group-stratified-5fold-x3-seed012",
+    "mean": 0.8152165201996358,
+    "std": 0.005943747380830179,
+    "folds": [
+      0.8083763625932301,
+      0.8153049482163406,
+      0.8082901554404145,
+      0.8216340621403913,
+      0.8221070811744386,
+      0.8193325661680092,
+      0.8114942528735632,
+      0.807825086306099,
+      0.816561242093157,
+      0.8245109321058688,
+      0.8171362852213916,
+      0.8234617596319724,
+      0.8130034522439585,
+      0.8136860264519838,
+      0.8055235903337169
+    ]
+  },
+  "lb": {
+    "public": null,
+    "private": null
+  },
+  "train_time_sec": 207.6,
+  "status": "done",
+  "conclusion": "CV 0.8152 ± 0.0059。分割ごとの平均は 0.8146〜0.8159 で安定している。土台の expA002（CV 0.8208）より 0.0056 下がり、expA002 の LB 0.80827 との差は 0.0125 から 0.0069 に縮んだ（early stopping の除去で 0.0014、分割の平均化で 0.0042）。fold の標準偏差も 0.0115 から 0.0059 に下がった。残る差は Public LB の標本誤差（σ 約 0.006〜0.0085）の範囲内。expA005 自体は未提出なので、LB は expA002 の値で代用している。採否は人間が判断する",
+  "tags": [
+    "catboost",
+    "seed-averaging",
+    "group-cv",
+    "honest-es",
+    "repeated-cv"
+  ]
+}
