@@ -1,0 +1,44 @@
+origin: claude
+parent: expA001
+hypothesis: "exp001 の LightGBM を新しい CV 方式（内側の検証による early stopping と repeated CV）で測り直し、以後の LightGBM の施策の比較基準にする"
+changes: "expA001 と同じモデルと特徴量で、木の数を学習側の内側の検証で決めて学習し直す。CV を分割 seed 3つの repeated group CV に変更"
+model: LightGBM
+tags: [baseline, lgbm, group-cv, honest-es, repeated-cv]
+
+params:
+  # notebook での試行結果（採用しなかった特徴量）
+  # - FamilySize を追加: va 0.82 -> 0.81 に低下
+  # - NoSpend, SpendCount を追加: va 変化なし、LB 0.806 -> 0.805 に低下
+  # - VIP を除外: va 0.815 +- 0.004（採用版は 0.816 +- 0.005）
+  features:
+    - Age
+    - TotalSpend
+    - HomePlanet
+    - CryoSleep
+    - Destination
+    - VIP
+    - Deck
+    - Num
+    - Side
+    - RoomService
+    - FoodCourt
+    - ShoppingMall
+    - Spa
+    - VRDeck
+  # CryoSleep から支出と CryoSleep の欠損を論理的に埋める。oof 0.8159 -> 0.8148 に低下したため無効
+  logical_imputation: false
+  lgb:
+    boosting_type: gbdt
+    objective: binary
+    metric: auc
+    learning_rate: 0.1
+    num_leaves: 16
+    # 上限は大きく取り、実際の木の数は early stopping で決める
+    n_estimators: 100000
+    random_state: 123
+    importance_type: gain
+    verbose: -1
+  early_stopping_rounds: 100
+  # 学習側の 1/inner_splits を木の数を決めるための内側の検証に使う
+  inner_splits: 5
+  inner_seed: 0
