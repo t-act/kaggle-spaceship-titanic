@@ -1,0 +1,88 @@
+{
+  "exp_id": "expA007",
+  "origin": "claude",
+  "parent": "expA006",
+  "created_at": "2026-09-30T21:52:55+09:00",
+  "git_hash": "f7b45f3",
+  "hypothesis": "同行者は行動が似るため、グループの人数、グループ内の CryoSleep の割合と支出、同じ Cabin の人数を加えると CV が上がる",
+  "changes": "GroupSize, GroupCryoRate, GroupSpend, GroupSpendOthers, CabinSize を追加",
+  "model": "LightGBM",
+  "config": {
+    "features": [
+      "Age",
+      "TotalSpend",
+      "HomePlanet",
+      "CryoSleep",
+      "Destination",
+      "VIP",
+      "Deck",
+      "Num",
+      "Side",
+      "RoomService",
+      "FoodCourt",
+      "ShoppingMall",
+      "Spa",
+      "VRDeck",
+      "GroupSize",
+      "GroupCryoRate",
+      "GroupSpend",
+      "GroupSpendOthers",
+      "CabinSize"
+    ],
+    "logical_imputation": false,
+    "lgb": {
+      "boosting_type": "gbdt",
+      "objective": "binary",
+      "metric": "auc",
+      "learning_rate": 0.1,
+      "num_leaves": 16,
+      "n_estimators": 100000,
+      "random_state": 123,
+      "importance_type": "gain",
+      "verbose": -1
+    },
+    "early_stopping_rounds": 100,
+    "inner_splits": 5,
+    "inner_seed": 0
+  },
+  "metric": {
+    "name": "accuracy",
+    "direction": "maximize"
+  },
+  "cv": {
+    "scheme": "group-stratified-5fold-x3-seed012",
+    "mean": 0.8095413468575942,
+    "std": 0.008231106214674683,
+    "folds": [
+      0.8043602983362019,
+      0.80897583429229,
+      0.8065630397236615,
+      0.8141542002301496,
+      0.8123200921128382,
+      0.8032220943613348,
+      0.8,
+      0.806674338319908,
+      0.8079355951696378,
+      0.8285385500575374,
+      0.8085106382978723,
+      0.8228867165037378,
+      0.810126582278481,
+      0.8148361127084531,
+      0.7940161104718066
+    ]
+  },
+  "lb": {
+    "public": null,
+    "private": null
+  },
+  "train_time_sec": 17.0,
+  "status": "done",
+  "conclusion": "CV 0.8095 ± 0.0082 で expA006 より -0.0029（同じ fold どうしの差の標準誤差 0.0017、改善は 15 fold 中 6 fold）。グループ特徴量で CV は上がらず、むしろ下がった。仮説は支持されない。GroupCryoRate や GroupSpend は本人の CryoSleep と TotalSpend と強く連動するため、新しい情報が少なく、分割の候補が増えた分だけ過学習した可能性がある。採否は人間が判断する",
+  "tags": [
+    "lgbm",
+    "group-cv",
+    "honest-es",
+    "repeated-cv",
+    "group-features"
+  ]
+}
