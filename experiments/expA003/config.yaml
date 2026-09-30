@@ -1,0 +1,11 @@
+origin: claude
+parent: expA002
+hypothesis: "LightGBM（expA001）と CatBoost（expA002）の予測確率を平均すると、誤り方の違いが打ち消し合って CV が単体を上回る"
+changes: "expA001 と expA002 の OOF と test の予測確率を等重みで平均する。学習はしない"
+model: "Ensemble (LightGBM + CatBoost)"
+tags: [ensemble, group-cv]
+
+params:
+  members: [expA001, expA002]
+  # 重みを OOF で最適化すると CV に過適合するため、まず等重みで効果を確かめる
+  weights: [0.5, 0.5]

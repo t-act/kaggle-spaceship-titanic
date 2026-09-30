@@ -1,0 +1,32 @@
+origin: claude
+parent: exp002
+hypothesis: "グループ単位の CV でも、CatBoost の seed 平均は LightGBM（expA001）を上回る"
+changes: "exp002 と同じモデルで、CV 分割を PassengerId のグループ単位（StratifiedGroupKFold）に変更"
+model: CatBoost
+tags: [catboost, seed-averaging, group-cv]
+
+params:
+  features:
+    - Age
+    - TotalSpend
+    - HomePlanet
+    - CryoSleep
+    - Destination
+    - VIP
+    - Deck
+    - Num
+    - Side
+    - RoomService
+    - FoodCourt
+    - ShoppingMall
+    - Spa
+    - VRDeck
+  logical_imputation: false
+  # notebook では fold 分割の seed も 0/1/2 で変えていたが、CV を比較可能に保つため分割は固定し、モデルの seed だけを変える
+  seeds: [0, 1, 2]
+  catboost:
+    iterations: 10000
+    learning_rate: 0.05
+    eval_metric: AUC
+    early_stopping_rounds: 200
+    verbose: 0
