@@ -1,0 +1,47 @@
+{
+  "exp_id": "expA003",
+  "origin": "claude",
+  "parent": "expA002",
+  "created_at": "2026-09-30T21:26:50+09:00",
+  "git_hash": "be86a3c",
+  "hypothesis": "LightGBM（expA001）と CatBoost（expA002）の予測確率を平均すると、誤り方の違いが打ち消し合って CV が単体を上回る",
+  "changes": "expA001 と expA002 の OOF と test の予測確率を等重みで平均する。学習はしない",
+  "model": "Ensemble (LightGBM + CatBoost)",
+  "config": {
+    "members": [
+      "expA001",
+      "expA002"
+    ],
+    "weights": [
+      0.5,
+      0.5
+    ]
+  },
+  "metric": {
+    "name": "accuracy",
+    "direction": "maximize"
+  },
+  "cv": {
+    "scheme": "group-stratified-5fold-seed123",
+    "mean": 0.8208904102790449,
+    "std": 0.008748987210043592,
+    "folds": [
+      0.8332374928119609,
+      0.8177113283496262,
+      0.8113858539390454,
+      0.8130034522439585,
+      0.8291139240506329
+    ]
+  },
+  "lb": {
+    "public": 0.8071,
+    "private": null
+  },
+  "train_time_sec": 0.4,
+  "status": "done",
+  "conclusion": "CV 0.8209 ± 0.0087 で expA002 とほぼ同じ（+0.0001）、LB 0.80710 は expA002 より -0.0012。fold 間のばらつきは縮んだが平均は上がらず、仮説は支持されない。OOF 予測の一致率が 94.4% と高く誤り方の違いが小さいため、平均の効果が出にくい。採否は人間が判断する",
+  "tags": [
+    "ensemble",
+    "group-cv"
+  ]
+}

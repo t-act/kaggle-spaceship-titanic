@@ -189,7 +189,7 @@ pre.config {
   <div id="app"></div>
 </main>
 
-<script id="payload" type="application/json">{"competition": "spaceship-titanic", "generated_at": "2026-09-30T21:16:04+09:00", "experiments": [{"exp_id": "exp001", "origin": "human", "parent": null, "created_at": "2026-09-30T21:09:46+09:00", "git_hash": "0f6eb76", "hypothesis": "カテゴリ列をそのまま渡せる LightGBM で、Cabin 分解と支出合計を加えたベースラインを作る", "changes": "notebooks/03_optimaze_model を移植。Cabin を Deck/Num/Side に分解し TotalSpend を追加", "model": "LightGBM", "config": {"features": ["Age", "TotalSpend", "HomePlanet", "CryoSleep", "Destination", "VIP", "Deck", "Num", "Side", "RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck"], "logical_imputation": false, "lgb": {"boosting_type": "gbdt", "objective": "binary", "metric": "auc", "learning_rate": 0.1, "num_leaves": 16, "n_estimators": 100000, "random_state": 123, "importance_type": "gain", "verbose": -1}, "early_stopping_rounds": 100}, "metric": {"name": "accuracy", "direction": "maximize"}, "cv": {"mean": 0.8159439144357, "std": 0.00497123416702245, "folds": [0.8067855089131685, 0.8205865439907993, 0.8200115008625647, 0.8170310701956272, 0.8153049482163406]}, "lb": {"public": null, "private": null}, "train_time_sec": 2.8, "status": "done", "conclusion": "notebook 03 をそのまま移植した。CV 0.8159 ± 0.0050 で、submission.csv は notebook の出力とバイト単位で一致する。以後の比較基準とする。採否は人間が判断する", "tags": ["baseline", "lgbm"]}, {"exp_id": "exp002", "origin": "human", "parent": "exp001", "created_at": "2026-09-30T21:11:20+09:00", "git_hash": "28b83a9", "hypothesis": "CatBoost に変え、モデルの seed 平均で予測を安定させると CV が改善する", "changes": "notebooks/04_change_model を移植。モデルを CatBoost に変更し、seed 0/1/2 の予測確率を平均。CV 分割は固定分割に統一", "model": "CatBoost", "config": {"features": ["Age", "TotalSpend", "HomePlanet", "CryoSleep", "Destination", "VIP", "Deck", "Num", "Side", "RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck"], "logical_imputation": false, "seeds": [0, 1, 2], "catboost": {"iterations": 10000, "learning_rate": 0.05, "eval_metric": "AUC", "early_stopping_rounds": 200, "verbose": 0}}, "metric": {"name": "accuracy", "direction": "maximize"}, "cv": {"mean": 0.8172096710475382, "std": 0.0036591116361879322, "folds": [0.8102357676825762, 0.8171362852213916, 0.8205865439907993, 0.8187571921749137, 0.8193325661680092]}, "lb": {"public": null, "private": null}, "train_time_sec": 37.3, "status": "done", "conclusion": "CV 0.8172 ± 0.0037 で exp001 より +0.0013、fold 間のばらつきも小さい。ただし改善幅は fold の標準偏差より小さく、有意とは言い切れない。notebook 04 の OOF 0.8214 は fold 分割 seed も変えた OOF の平均なので、固定分割の本値とは比較できない。採否は人間が判断する", "tags": ["catboost", "seed-averaging"]}]}</script>
+<script id="payload" type="application/json">{"competition": "spaceship-titanic", "generated_at": "2026-09-30T21:28:32+09:00", "experiments": [{"exp_id": "exp001", "origin": "human", "parent": null, "created_at": "2026-09-30T21:09:46+09:00", "git_hash": "0f6eb76", "hypothesis": "カテゴリ列をそのまま渡せる LightGBM で、Cabin 分解と支出合計を加えたベースラインを作る", "changes": "notebooks/03_optimaze_model を移植。Cabin を Deck/Num/Side に分解し TotalSpend を追加", "model": "LightGBM", "config": {"features": ["Age", "TotalSpend", "HomePlanet", "CryoSleep", "Destination", "VIP", "Deck", "Num", "Side", "RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck"], "logical_imputation": false, "lgb": {"boosting_type": "gbdt", "objective": "binary", "metric": "auc", "learning_rate": 0.1, "num_leaves": 16, "n_estimators": 100000, "random_state": 123, "importance_type": "gain", "verbose": -1}, "early_stopping_rounds": 100}, "metric": {"name": "accuracy", "direction": "maximize"}, "cv": {"scheme": "stratified-5fold-seed123", "mean": 0.8159439144357, "std": 0.00497123416702245, "folds": [0.8067855089131685, 0.8205865439907993, 0.8200115008625647, 0.8170310701956272, 0.8153049482163406]}, "lb": {"public": 0.80851, "private": null}, "train_time_sec": 2.8, "status": "done", "conclusion": "notebook 03 をそのまま移植した。CV 0.8159 ± 0.0050 で、submission.csv は notebook の出力とバイト単位で一致する。以後の比較基準とする。採否は人間が判断する", "tags": ["baseline", "lgbm"]}, {"exp_id": "exp002", "origin": "human", "parent": "exp001", "created_at": "2026-09-30T21:11:20+09:00", "git_hash": "28b83a9", "hypothesis": "CatBoost に変え、モデルの seed 平均で予測を安定させると CV が改善する", "changes": "notebooks/04_change_model を移植。モデルを CatBoost に変更し、seed 0/1/2 の予測確率を平均。CV 分割は固定分割に統一", "model": "CatBoost", "config": {"features": ["Age", "TotalSpend", "HomePlanet", "CryoSleep", "Destination", "VIP", "Deck", "Num", "Side", "RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck"], "logical_imputation": false, "seeds": [0, 1, 2], "catboost": {"iterations": 10000, "learning_rate": 0.05, "eval_metric": "AUC", "early_stopping_rounds": 200, "verbose": 0}}, "metric": {"name": "accuracy", "direction": "maximize"}, "cv": {"scheme": "stratified-5fold-seed123", "mean": 0.8172096710475382, "std": 0.0036591116361879322, "folds": [0.8102357676825762, 0.8171362852213916, 0.8205865439907993, 0.8187571921749137, 0.8193325661680092]}, "lb": {"public": 0.80734, "private": null}, "train_time_sec": 37.3, "status": "done", "conclusion": "CV 0.8172 ± 0.0037 で exp001 より +0.0013、fold 間のばらつきも小さい。ただし改善幅は fold の標準偏差より小さく、有意とは言い切れない。notebook 04 の OOF 0.8214 は fold 分割 seed も変えた OOF の平均なので、固定分割の本値とは比較できない。採否は人間が判断する", "tags": ["catboost", "seed-averaging"]}, {"exp_id": "expA001", "origin": "claude", "parent": "exp001", "created_at": "2026-09-30T21:25:53+09:00", "git_hash": "be86a3c", "hypothesis": "CV を test と同じくグループ単位で分割すると、グループ内の情報が検証側に漏れない分だけ CV が下がり、LB に近づく", "changes": "exp001 と同じモデルで、CV 分割を PassengerId のグループ単位（StratifiedGroupKFold）に変更", "model": "LightGBM", "config": {"features": ["Age", "TotalSpend", "HomePlanet", "CryoSleep", "Destination", "VIP", "Deck", "Num", "Side", "RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck"], "logical_imputation": false, "lgb": {"boosting_type": "gbdt", "objective": "binary", "metric": "auc", "learning_rate": 0.1, "num_leaves": 16, "n_estimators": 100000, "random_state": 123, "importance_type": "gain", "verbose": -1}, "early_stopping_rounds": 100}, "metric": {"name": "accuracy", "direction": "maximize"}, "cv": {"scheme": "group-stratified-5fold-seed123", "mean": 0.8170950594597242, "std": 0.005748608417676366, "folds": [0.8188614146060954, 0.8108108108108109, 0.8142610695802185, 0.8141542002301496, 0.8273878020713463]}, "lb": {"public": 0.80547, "private": null}, "train_time_sec": 3.0, "status": "done", "conclusion": "CV 0.8171 ± 0.0057（exp001 比 +0.0012）、LB 0.80547（exp001 比 -0.0030）。仮説に反して CV は下がらず、LB との差も縮まらなかった（-0.0074 → -0.0116）。今の特徴量はグループの情報を使っていないため、グループをまたぐ分割でも漏れがほとんど生じていないと考えられる。モデルと特徴量が exp001 と同じでも、学習 fold の割り当てだけで LB が 0.003 動いた。採否は人間が判断する", "tags": ["baseline", "lgbm", "group-cv"]}, {"exp_id": "expA002", "origin": "claude", "parent": "exp002", "created_at": "2026-09-30T21:25:59+09:00", "git_hash": "be86a3c", "hypothesis": "グループ単位の CV でも、CatBoost の seed 平均は LightGBM（expA001）を上回る", "changes": "exp002 と同じモデルで、CV 分割を PassengerId のグループ単位（StratifiedGroupKFold）に変更", "model": "CatBoost", "config": {"features": ["Age", "TotalSpend", "HomePlanet", "CryoSleep", "Destination", "VIP", "Deck", "Num", "Side", "RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck"], "logical_imputation": false, "seeds": [0, 1, 2], "catboost": {"iterations": 10000, "learning_rate": 0.05, "eval_metric": "AUC", "early_stopping_rounds": 200, "verbose": 0}}, "metric": {"name": "accuracy", "direction": "maximize"}, "cv": {"scheme": "group-stratified-5fold-seed123", "mean": 0.8207756663452865, "std": 0.011482958963457862, "folds": [0.8378378378378378, 0.8159861989649224, 0.8056354226566993, 0.8147295742232451, 0.8296892980437284]}, "lb": {"public": 0.80827, "private": null}, "train_time_sec": 48.3, "status": "done", "conclusion": "CV 0.8208 ± 0.0115、LB 0.80827。expA001 より CV +0.0037、LB +0.0028 で、グループ CV でも CatBoost が上回るという仮説と整合する。ただし fold の標準偏差 0.0115 が大きく、LB の差も fold の割り当てだけで生じる揺れ（exp001 と expA001 で 0.003）と同程度なので、有意とは言い切れない。採否は人間が判断する", "tags": ["catboost", "seed-averaging", "group-cv"]}, {"exp_id": "expA003", "origin": "claude", "parent": "expA002", "created_at": "2026-09-30T21:26:50+09:00", "git_hash": "be86a3c", "hypothesis": "LightGBM（expA001）と CatBoost（expA002）の予測確率を平均すると、誤り方の違いが打ち消し合って CV が単体を上回る", "changes": "expA001 と expA002 の OOF と test の予測確率を等重みで平均する。学習はしない", "model": "Ensemble (LightGBM + CatBoost)", "config": {"members": ["expA001", "expA002"], "weights": [0.5, 0.5]}, "metric": {"name": "accuracy", "direction": "maximize"}, "cv": {"scheme": "group-stratified-5fold-seed123", "mean": 0.8208904102790449, "std": 0.008748987210043592, "folds": [0.8332374928119609, 0.8177113283496262, 0.8113858539390454, 0.8130034522439585, 0.8291139240506329]}, "lb": {"public": 0.8071, "private": null}, "train_time_sec": 0.4, "status": "done", "conclusion": "CV 0.8209 ± 0.0087 で expA002 とほぼ同じ（+0.0001）、LB 0.80710 は expA002 より -0.0012。fold 間のばらつきは縮んだが平均は上がらず、仮説は支持されない。OOF 予測の一致率が 94.4% と高く誤り方の違いが小さいため、平均の効果が出にくい。採否は人間が判断する", "tags": ["ensemble", "group-cv"]}]}</script>
 <script>
 "use strict";
 
@@ -204,7 +204,11 @@ const METRIC = EXPERIMENTS.find((e) => e.metric)?.metric ?? { name: "score", dir
 const MAXIMIZE = METRIC.direction === "maximize";
 const better = (a, b) => (MAXIMIZE ? a > b : a < b);
 
-const state = { origin: "all", tags: new Set(), sortKey: "created_at", sortDir: -1, open: new Set() };
+// 分割方式が違う CV は比較できないため、既定では最新の実験と同じ方式だけを表示する
+const SCHEMES = [...new Set(EXPERIMENTS.map((e) => e.cv?.scheme).filter(Boolean))];
+const LATEST_SCHEME = [...EXPERIMENTS].filter((e) => e.cv).sort((a, b) => b.created_at.localeCompare(a.created_at))[0]?.cv.scheme;
+
+const state = { scheme: LATEST_SCHEME ?? "all", origin: "all", tags: new Set(), sortKey: "created_at", sortDir: -1, open: new Set() };
 
 // ---------- helpers ----------
 function el(tag, attrs = {}, ...children) {
@@ -248,6 +252,8 @@ function statusBadge(status) {
 function filtered() {
   return EXPERIMENTS.filter(
     (e) =>
+      // スコアのない実行中・失敗の実験は分割方式を持たないため、どの方式でも表示する
+      (state.scheme === "all" || !e.cv || e.cv.scheme === state.scheme) &&
       (state.origin === "all" || e.origin === state.origin) &&
       (state.tags.size === 0 || e.tags.some((t) => state.tags.has(t)))
   );
@@ -272,6 +278,12 @@ function renderTiles(list) {
 // ---------- filters ----------
 function renderFilters(list) {
   const allTags = [...new Set(EXPERIMENTS.flatMap((e) => e.tags))].sort();
+  const schemeChips = ["all", ...SCHEMES].map((s) =>
+    el("button", {
+      class: "chip", type: "button", "aria-pressed": String(state.scheme === s),
+      onclick: () => { state.scheme = s; render(); },
+    }, s === "all" ? "すべて" : s)
+  );
   const originChips = ["all", ...ORIGINS].map((o) =>
     el("button", {
       class: "chip", type: "button", "aria-pressed": String(state.origin === o),
@@ -287,6 +299,7 @@ function renderFilters(list) {
   return el(
     "div",
     { class: "filters", role: "group", "aria-label": "絞り込み" },
+    SCHEMES.length > 1 ? el("div", { class: "filter-group" }, el("span", { class: "filter-label" }, "CV 分割"), schemeChips) : null,
     el("div", { class: "filter-group" }, el("span", { class: "filter-label" }, "起案"), originChips),
     allTags.length ? el("div", { class: "filter-group" }, el("span", { class: "filter-label" }, "タグ"), tagChips) : null,
     el("div", { class: "filter-count" }, `${list.length} / ${EXPERIMENTS.length} 件を表示`)
@@ -491,6 +504,7 @@ function detailRow(e) {
   const meta = el(
     "dl", { class: "meta" },
     el("dt", {}, "モデル"), el("dd", {}, e.model),
+    el("dt", {}, "CV 分割"), el("dd", {}, e.cv?.scheme ?? "—"),
     el("dt", {}, "作成"), el("dd", {}, fmtDate(e.created_at, true)),
     el("dt", {}, "commit"), el("dd", { class: "mono" }, e.git_hash),
     el("dt", {}, "学習時間"), el("dd", {}, e.train_time_sec == null ? "—" : `${e.train_time_sec} 秒`),
@@ -601,7 +615,7 @@ function renderLineage(list) {
               type: "button", class: `tree-node${visible.has(e.exp_id) ? "" : " faded"}`,
               onclick: () => {
                 state.open.add(e.exp_id);
-                if (!visible.has(e.exp_id)) { state.origin = "all"; state.tags.clear(); }
+                if (!visible.has(e.exp_id)) { state.scheme = "all"; state.origin = "all"; state.tags.clear(); }
                 render();
                 document.getElementById(`row-${e.exp_id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
               },
