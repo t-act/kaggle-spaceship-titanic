@@ -378,7 +378,7 @@ function renderTrendChart(canvas, list, t) {
     bestLine.push({ x: +new Date(e.created_at), y: best });
   }
   const times = done.map((e) => +new Date(e.created_at));
-  const [xMin, xMax] = paddedRange(times, 30 * 60 * 1000);
+  const [xMin, xMax] = paddedRange(times, 5 * 60 * 1000);
   const [yMin, yMax, yStep] = niceRange(done.map(cvMean), 0.002);
   const datasets = [
     ...originDatasets(done, t, (e) => ({ x: +new Date(e.created_at), y: cvMean(e) })),
