@@ -1,0 +1,39 @@
+origin: claude
+parent: expA005
+hypothesis: "同行グループの特徴量は CatBoost（expA005）でも CV を上げる"
+changes: "expA005 に GroupSize, GroupCryoRate, GroupSpend, GroupSpendOthers, CabinSize を追加（expA007 と同じ定義）"
+model: CatBoost
+tags: [catboost, seed-averaging, group-cv, honest-es, repeated-cv, group-features]
+
+params:
+  features:
+    - Age
+    - TotalSpend
+    - HomePlanet
+    - CryoSleep
+    - Destination
+    - VIP
+    - Deck
+    - Num
+    - Side
+    - RoomService
+    - FoodCourt
+    - ShoppingMall
+    - Spa
+    - VRDeck
+    - GroupSize
+    - GroupCryoRate
+    - GroupSpend
+    - GroupSpendOthers
+    - CabinSize
+  logical_imputation: false
+  # notebook では fold 分割の seed も 0/1/2 で変えていたが、CV を比較可能に保つため分割は固定し、モデルの seed だけを変える
+  seeds: [0, 1, 2]
+  # 学習側の 1/inner_splits を木の数を決めるための内側の検証に使う
+  inner_splits: 5
+  catboost:
+    iterations: 10000
+    learning_rate: 0.05
+    eval_metric: AUC
+    early_stopping_rounds: 200
+    verbose: 0
