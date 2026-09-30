@@ -2,8 +2,12 @@
 __pycache__/
 .ipynb_checkpoints/
 
-# Kaggle から取得するデータと生成物
+# Kaggle から取得するデータ
 data/
+
+# 実験の生成物（results.json だけを管理する）
+experiments/*/oof.npy
+experiments/*/submission.csv
 submissions/
 
 # CatBoost の学習ログ

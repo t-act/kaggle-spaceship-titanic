@@ -1151,15 +1151,17 @@ wheels = [
 [[package]]
 name = "kaggle-spaceship-titanic"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "catboost" },
+    { name = "jsonschema" },
     { name = "kaggle" },
     { name = "kagglehub" },
     { name = "lightgbm" },
     { name = "matplotlib" },
     { name = "numpy" },
     { name = "pandas" },
+    { name = "pyyaml" },
     { name = "scikit-learn" },
     { name = "setuptools" },
     { name = "ydata-profiling" },
@@ -1174,12 +1176,14 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "catboost", specifier = ">=1.2.10" },
+    { name = "jsonschema", specifier = ">=4.26.0" },
     { name = "kaggle", specifier = ">=2.2.4" },
     { name = "kagglehub", specifier = ">=1.0.2" },
     { name = "lightgbm", specifier = ">=4.7.0" },
     { name = "matplotlib", specifier = ">=3.10.0" },
     { name = "numpy", specifier = ">=2.3.5" },
     { name = "pandas", specifier = ">=2.3.3" },
+    { name = "pyyaml", specifier = ">=6.0.3" },
     { name = "scikit-learn", specifier = ">=1.9.1" },
     { name = "setuptools", specifier = "<81" },
     { name = "ydata-profiling", specifier = ">=4.18.4" },

@@ -1,0 +1,32 @@
+origin: human
+parent: exp001
+hypothesis: "CatBoost に変え、モデルの seed 平均で予測を安定させると CV が改善する"
+changes: "notebooks/04_change_model を移植。モデルを CatBoost に変更し、seed 0/1/2 の予測確率を平均。CV 分割は固定分割に統一"
+model: CatBoost
+tags: [catboost, seed-averaging]
+
+params:
+  features:
+    - Age
+    - TotalSpend
+    - HomePlanet
+    - CryoSleep
+    - Destination
+    - VIP
+    - Deck
+    - Num
+    - Side
+    - RoomService
+    - FoodCourt
+    - ShoppingMall
+    - Spa
+    - VRDeck
+  logical_imputation: false
+  # notebook では fold 分割の seed も 0/1/2 で変えていたが、CV を比較可能に保つため分割は固定し、モデルの seed だけを変える
+  seeds: [0, 1, 2]
+  catboost:
+    iterations: 10000
+    learning_rate: 0.05
+    eval_metric: AUC
+    early_stopping_rounds: 200
+    verbose: 0

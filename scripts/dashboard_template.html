@@ -1,0 +1,643 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>実験ダッシュボード</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  color-scheme: light;
+  --primary: #cc785c;
+  --ink: #141413;
+  --body: #3d3d3a;
+  --body-strong: #252523;
+  --muted: #6c6a64;
+  --muted-soft: #8e8b82;
+  --canvas: #faf9f5;
+  --surface-soft: #f5f0e8;
+  --surface-card: #efe9de;
+  --code-bg: #1f1e1b;
+  --on-dark: #faf9f5;
+  --hairline: #e6dfd8;
+  --hairline-soft: #ebe6df;
+  /* 系列色は dataviz 既定パレットの slot 1/2。canvas 上で CVD 分離を検証済み */
+  --series-human: #2a78d6;
+  --series-claude: #eb6834;
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-critical: #d03b3b;
+  --r-sm: 6px; --r-md: 8px; --r-lg: 12px; --r-pill: 9999px;
+  --s-xs: 8px; --s-sm: 12px; --s-md: 16px; --s-lg: 24px; --s-xl: 32px; --s-xxl: 48px;
+  --font-serif: "Tiempos Headline", "Cormorant Garamond", "EB Garamond", "Hiragino Mincho ProN", "Yu Mincho", Garamond, serif;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Yu Gothic", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --primary: #d88c6e;
+    --ink: #f5f2ea;
+    --body: #cfccc2;
+    --body-strong: #e6e2d8;
+    --muted: #9a968c;
+    --muted-soft: #78756c;
+    --canvas: #1a1917;
+    --surface-soft: #221f1b;
+    --surface-card: #27241f;
+    --code-bg: #211f1b;
+    --on-dark: #f5f2ea;
+    --hairline: #35322c;
+    --hairline-soft: #2c2925;
+    --series-human: #3987e5;
+    --series-claude: #d95926;
+  }
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--canvas);
+  color: var(--body);
+  font: 400 15px/1.55 var(--font-sans);
+}
+main { max-width: 1100px; margin: 0 auto; padding: var(--s-xxl) var(--s-md) var(--s-xxl); }
+h1, h2 { font-family: var(--font-serif); font-weight: 400; color: var(--ink); margin: 0; }
+h1 { font-size: 40px; line-height: 1.1; letter-spacing: -1px; }
+h2 { font-size: 26px; line-height: 1.2; letter-spacing: -0.3px; margin-bottom: var(--s-md); }
+a { color: var(--primary); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.caption { color: var(--muted); font-size: 13px; }
+.mono { font-family: var(--font-mono); }
+.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.dim { color: var(--muted-soft); }
+
+header { padding-bottom: var(--s-lg); border-bottom: 1px solid var(--hairline); }
+header .caption { margin-top: var(--s-xs); }
+section { margin-top: var(--s-xxl); }
+
+/* ---- stat tiles ---- */
+.tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-md); margin-top: var(--s-xl); }
+.tile { background: var(--surface-card); border-radius: var(--r-lg); padding: var(--s-lg); }
+.tile-label { color: var(--muted); font-size: 13px; font-weight: 500; }
+.tile-value { color: var(--ink); font-size: 34px; font-weight: 500; line-height: 1.2; margin-top: 4px; }
+.tile-sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
+
+/* ---- filters ---- */
+.filters { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-sm) var(--s-lg); margin-top: var(--s-xl); }
+.filter-group { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.filter-label { color: var(--muted); font-size: 13px; margin-right: 4px; }
+.chip {
+  font: 500 13px/1 var(--font-sans); color: var(--body);
+  background: transparent; border: 1px solid var(--hairline); border-radius: var(--r-pill);
+  padding: 7px 12px; cursor: pointer;
+}
+.chip:hover { background: var(--surface-soft); }
+.chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--canvas); }
+.chip:focus-visible, tr.row:focus-visible, .tree-node:focus-visible, th button:focus-visible {
+  outline: 2px solid var(--primary); outline-offset: 2px;
+}
+.filter-count { color: var(--muted); font-size: 13px; margin-left: auto; }
+
+/* ---- charts ---- */
+.charts { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: var(--s-md); }
+.card { border: 1px solid var(--hairline); border-radius: var(--r-lg); padding: var(--s-lg); }
+.card h2 { font-size: 20px; margin-bottom: 4px; }
+.card .caption { margin: 0 0 var(--s-md); }
+.chart-box { position: relative; height: 280px; }
+.empty { display: grid; place-items: center; height: 280px; color: var(--muted); font-size: 14px; text-align: center; }
+
+/* ---- table ---- */
+.table-wrap { overflow-x: auto; border: 1px solid var(--hairline); border-radius: var(--r-md); }
+table { width: 100%; min-width: 900px; border-collapse: collapse; }
+th, td { padding: 10px 12px; border-bottom: 1px solid var(--hairline); text-align: left; vertical-align: top; }
+th { background: var(--surface-card); color: var(--body-strong); font-size: 13px; font-weight: 500; white-space: nowrap; }
+th button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+th.num { font-family: var(--font-sans); }
+th.num button { text-align: right; }
+th .arrow { color: var(--muted-soft); margin-left: 4px; font-size: 11px; }
+tbody tr:last-child td { border-bottom: 0; }
+tr.row { cursor: pointer; }
+tr.row:hover td { background: var(--surface-soft); }
+tr.row.open td { background: var(--surface-soft); border-bottom-color: transparent; }
+.clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+col.c-text { width: 26%; }
+.best-pill {
+  display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: var(--r-pill);
+  background: var(--primary); color: var(--canvas); font: 500 11px/1.5 var(--font-sans); vertical-align: 1px;
+}
+
+.origin { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.marker { width: 10px; height: 10px; flex: none; }
+.marker-human { border-radius: 50%; background: var(--series-human); }
+.marker-claude { background: var(--series-claude); clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+.status { white-space: nowrap; }
+.status-icon { font-weight: 700; margin-right: 4px; }
+.status-done .status-icon { color: var(--status-good); }
+.status-running .status-icon { color: var(--status-warning); }
+.status-failed .status-icon { color: var(--status-critical); }
+
+/* ---- detail ---- */
+tr.detail td { background: var(--surface-soft); padding: 4px var(--s-lg) var(--s-lg); }
+.detail-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1.6fr); gap: var(--s-lg); }
+.detail-grid h3 { font: 500 12px/1.4 var(--font-sans); color: var(--muted); margin: var(--s-sm) 0 6px; letter-spacing: 0.02em; }
+.detail-grid p { margin: 0; color: var(--body-strong); white-space: pre-wrap; }
+.folds { width: auto; min-width: 0; border-collapse: collapse; }
+tr.detail .folds td { padding: 3px 20px 3px 0; border: 0; background: none; white-space: nowrap; }
+tr.detail .folds tr.total td { border-top: 1px solid var(--hairline); padding-top: 6px; color: var(--ink); }
+dl.meta { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 3px 12px; margin: 0; font-size: 13px; }
+dl.meta dt { color: var(--muted); }
+dl.meta dd { margin: 0; color: var(--body-strong); overflow-wrap: anywhere; }
+pre.config {
+  margin: 0; max-height: 280px; overflow: auto; padding: var(--s-sm) var(--s-md);
+  background: var(--code-bg); color: var(--on-dark); border-radius: var(--r-md);
+  font: 12.5px/1.6 var(--font-mono);
+}
+
+/* ---- lineage ---- */
+.tree, .tree ul { list-style: none; margin: 0; padding: 0; }
+.tree ul { margin-left: 18px; padding-left: 14px; border-left: 1px solid var(--hairline); }
+.tree li { padding-top: 6px; }
+.tree-node {
+  display: inline-flex; align-items: baseline; gap: 10px; max-width: 100%;
+  padding: 6px 12px; border: 1px solid var(--hairline); border-radius: var(--r-md);
+  background: var(--canvas); cursor: pointer; font: inherit; color: inherit; text-align: left;
+}
+.tree-node:hover { background: var(--surface-soft); }
+.tree-node.faded { opacity: 0.4; }
+.tree-node .origin { align-self: center; }
+.tree-node .hyp { color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+
+.empty-all { margin-top: var(--s-xxl); padding: var(--s-xl); background: var(--surface-card); border-radius: var(--r-lg); color: var(--body); }
+
+@media (max-width: 820px) {
+  main { padding-top: var(--s-xl); }
+  h1 { font-size: 32px; }
+  .tiles { grid-template-columns: 1fr; }
+  .charts { grid-template-columns: minmax(0, 1fr); }
+  .detail-grid { grid-template-columns: minmax(0, 1fr); }
+  .filter-count { margin-left: 0; }
+}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>実験ダッシュボード</h1>
+    <div class="caption" id="subtitle"></div>
+  </header>
+  <div id="app"></div>
+</main>
+
+<script id="payload" type="application/json">__PAYLOAD__</script>
+<script>
+"use strict";
+
+const PAYLOAD = JSON.parse(document.getElementById("payload").textContent);
+const EXPERIMENTS = PAYLOAD.experiments;
+const ORIGINS = ["human", "claude"];
+const ORIGIN_POINT = { human: "circle", claude: "triangle" };
+const STATUS = { done: ["✓", "完了"], running: ["●", "実行中"], failed: ["✕", "失敗"] };
+
+// 指標は全実験で共通（src/metric.py）なので、先頭の実験のものを使う
+const METRIC = EXPERIMENTS.find((e) => e.metric)?.metric ?? { name: "score", direction: "maximize" };
+const MAXIMIZE = METRIC.direction === "maximize";
+const better = (a, b) => (MAXIMIZE ? a > b : a < b);
+
+const state = { origin: "all", tags: new Set(), sortKey: "created_at", sortDir: -1, open: new Set() };
+
+// ---------- helpers ----------
+function el(tag, attrs = {}, ...children) {
+  const node = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (v == null || v === false) continue;
+    if (k === "class") node.className = v;
+    else if (k.startsWith("on")) node.addEventListener(k.slice(2), v);
+    else node.setAttribute(k, v === true ? "" : v);
+  }
+  for (const c of children.flat()) {
+    if (c == null || c === false) continue;
+    node.append(c instanceof Node ? c : document.createTextNode(String(c)));
+  }
+  return node;
+}
+const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+const fmt = (v, digits = 4) => (v == null ? "—" : Number(v).toFixed(digits));
+const cvMean = (e) => e.cv?.mean ?? null;
+const lbPublic = (e) => e.lb?.public ?? null;
+function fmtDate(iso, withYear = false) {
+  const d = new Date(iso);
+  const pad = (n) => String(n).padStart(2, "0");
+  const date = `${d.getMonth() + 1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return withYear ? `${d.getFullYear()}/${date}` : date;
+}
+function bestOf(list, value) {
+  return list.reduce((best, e) => {
+    const v = value(e);
+    return v != null && (best == null || better(v, value(best))) ? e : best;
+  }, null);
+}
+function originBadge(origin) {
+  return el("span", { class: "origin" }, el("span", { class: `marker marker-${origin}`, "aria-hidden": "true" }), origin);
+}
+function statusBadge(status) {
+  const [icon, label] = STATUS[status] ?? ["?", status];
+  return el("span", { class: `status status-${status}` }, el("span", { class: "status-icon", "aria-hidden": "true" }, icon), label);
+}
+
+function filtered() {
+  return EXPERIMENTS.filter(
+    (e) =>
+      (state.origin === "all" || e.origin === state.origin) &&
+      (state.tags.size === 0 || e.tags.some((t) => state.tags.has(t)))
+  );
+}
+
+// ---------- tiles ----------
+function renderTiles(list) {
+  const bestCv = bestOf(list, cvMean);
+  const bestLb = bestOf(list, lbPublic);
+  const count = (s) => list.filter((e) => e.status === s).length;
+  const tile = (label, value, sub) =>
+    el("div", { class: "tile" }, el("div", { class: "tile-label" }, label), el("div", { class: "tile-value" }, value), el("div", { class: "tile-sub" }, sub));
+  return el(
+    "div",
+    { class: "tiles" },
+    tile("ベスト CV", fmt(bestCv && cvMean(bestCv)), bestCv ? `${bestCv.exp_id} · ${bestCv.model}` : "完了した実験なし"),
+    tile("ベスト Public LB", fmt(bestLb && lbPublic(bestLb), 5), bestLb ? `${bestLb.exp_id} · CV ${fmt(cvMean(bestLb))}` : "LB 未記入"),
+    tile("実験数", String(list.length), `完了 ${count("done")} · 実行中 ${count("running")} · 失敗 ${count("failed")}`)
+  );
+}
+
+// ---------- filters ----------
+function renderFilters(list) {
+  const allTags = [...new Set(EXPERIMENTS.flatMap((e) => e.tags))].sort();
+  const originChips = ["all", ...ORIGINS].map((o) =>
+    el("button", {
+      class: "chip", type: "button", "aria-pressed": String(state.origin === o),
+      onclick: () => { state.origin = o; render(); },
+    }, o === "all" ? "すべて" : o)
+  );
+  const tagChips = allTags.map((t) =>
+    el("button", {
+      class: "chip", type: "button", "aria-pressed": String(state.tags.has(t)),
+      onclick: () => { state.tags.has(t) ? state.tags.delete(t) : state.tags.add(t); render(); },
+    }, t)
+  );
+  return el(
+    "div",
+    { class: "filters", role: "group", "aria-label": "絞り込み" },
+    el("div", { class: "filter-group" }, el("span", { class: "filter-label" }, "起案"), originChips),
+    allTags.length ? el("div", { class: "filter-group" }, el("span", { class: "filter-label" }, "タグ"), tagChips) : null,
+    el("div", { class: "filter-count" }, `${list.length} / ${EXPERIMENTS.length} 件を表示`)
+  );
+}
+
+// ---------- charts ----------
+let charts = [];
+function chartTheme() {
+  return {
+    text: cssVar("--muted"), grid: cssVar("--hairline-soft"), axis: cssVar("--hairline"),
+    ink: cssVar("--body-strong"), surface: cssVar("--canvas"), card: cssVar("--surface-card"),
+    reference: cssVar("--muted-soft"),
+    series: { human: cssVar("--series-human"), claude: cssVar("--series-claude") },
+  };
+}
+function baseOptions(t) {
+  return {
+    responsive: true, maintainAspectRatio: false, animation: false,
+    layout: { padding: { top: 4, right: 8 } },
+    plugins: {
+      legend: {
+        position: "top", align: "start",
+        labels: { usePointStyle: true, boxWidth: 8, boxHeight: 8, padding: 14, color: t.text, font: { size: 12 } },
+      },
+      tooltip: {
+        backgroundColor: t.card, titleColor: t.ink, bodyColor: t.ink, borderColor: t.axis, borderWidth: 1,
+        padding: 10, displayColors: false, titleFont: { weight: "500" },
+      },
+    },
+  };
+}
+function axis(t, title, extra = {}, ticks = {}) {
+  return {
+    grid: { color: t.grid, drawTicks: false }, border: { color: t.axis },
+    ticks: { color: t.text, padding: 6, font: { size: 11 }, ...ticks },
+    title: { display: true, text: title, color: t.text, font: { size: 12 } },
+    ...extra,
+  };
+}
+// 固定桁で丸めると細かい目盛りが同じラベルに潰れるため、目盛り間隔から桁数を決める
+function ticksFor(step) {
+  const digits = Math.max(0, -Math.floor(Math.log10(step) + 1e-9));
+  return { stepSize: step, callback: (v) => Number(v).toFixed(digits) };
+}
+function originDatasets(list, t, xy) {
+  return ORIGINS.map((o) => ({
+    type: "scatter", label: o,
+    data: list.filter((e) => e.origin === o).map((e) => ({ ...xy(e), exp: e })).filter((p) => p.x != null && p.y != null),
+    pointStyle: ORIGIN_POINT[o], backgroundColor: t.series[o], borderColor: t.surface, borderWidth: 2,
+    // 三角は同じ半径だと丸より面積が小さく見えるため一段大きくする
+    pointRadius: o === "claude" ? 7.5 : 6, pointHoverRadius: o === "claude" ? 9.5 : 8, pointHitRadius: 12,
+  })).filter((d) => d.data.length);
+}
+function tooltipFor(scoreLine) {
+  return {
+    filter: (item) => item.raw && item.raw.exp,
+    callbacks: {
+      title: (items) => items[0].raw.exp.exp_id,
+      label: (item) => scoreLine(item.raw.exp),
+      afterLabel: (item) => {
+        const h = item.raw.exp.hypothesis;
+        return h.length > 40 ? h.slice(0, 40) + "…" : h;
+      },
+    },
+  };
+}
+function paddedRange(values, minPad) {
+  const lo = Math.min(...values), hi = Math.max(...values);
+  const pad = Math.max((hi - lo) * 0.08, minPad);
+  return [lo - pad, hi + pad];
+}
+// 余白を足した範囲を 1/2/5 刻みの目盛りに揃える。端の目盛りが半端な値にならず、対角線も軸の端まで引ける。
+// 2.5 刻みは桁が1つ増えて表示が詰まるため使わない
+function niceRange(values, minPad) {
+  const [lo, hi] = paddedRange(values, minPad);
+  const raw = (hi - lo) / 5;
+  const mag = 10 ** Math.floor(Math.log10(raw));
+  const step = [1, 2, 5, 10].map((m) => m * mag).find((s) => s >= raw);
+  return [Math.floor(lo / step) * step, Math.ceil(hi / step) * step, step];
+}
+
+function renderTrendChart(canvas, list, t) {
+  const done = list.filter((e) => cvMean(e) != null).sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+  const bestLine = [];
+  let best = null;
+  for (const e of done) {
+    if (best == null || better(cvMean(e), best)) best = cvMean(e);
+    bestLine.push({ x: +new Date(e.created_at), y: best });
+  }
+  const times = done.map((e) => +new Date(e.created_at));
+  const [xMin, xMax] = paddedRange(times, 30 * 60 * 1000);
+  const [yMin, yMax, yStep] = niceRange(done.map(cvMean), 0.002);
+  const datasets = [
+    ...originDatasets(done, t, (e) => ({ x: +new Date(e.created_at), y: cvMean(e) })),
+    {
+      type: "line", label: "ベスト推移", data: bestLine, stepped: true,
+      borderColor: t.reference, borderWidth: 2, pointRadius: 0, pointHitRadius: 0, pointStyle: "line", order: 10,
+    },
+  ];
+  const opts = baseOptions(t);
+  opts.plugins.tooltip = { ...opts.plugins.tooltip, ...tooltipFor((e) => `CV ${fmt(cvMean(e))}  ·  ${fmtDate(e.created_at)}`) };
+  opts.scales = {
+    x: axis(t, "作成日時", { type: "linear", min: xMin, max: xMax }, { maxTicksLimit: 6, callback: (v) => fmtDate(v) }),
+    y: axis(t, `CV (${METRIC.name})`, { min: yMin, max: yMax }, ticksFor(yStep)),
+  };
+  return new Chart(canvas, { data: { datasets }, options: opts });
+}
+
+function renderCvLbChart(canvas, list, t) {
+  const pts = list.filter((e) => cvMean(e) != null && lbPublic(e) != null);
+  const [lo, hi, step] = niceRange(pts.flatMap((e) => [cvMean(e), lbPublic(e)]), 0.002);
+  const datasets = [
+    ...originDatasets(pts, t, (e) => ({ x: cvMean(e), y: lbPublic(e) })),
+    {
+      type: "line", label: "CV = LB", data: [{ x: lo, y: lo }, { x: hi, y: hi }],
+      borderColor: t.axis, borderWidth: 1, pointRadius: 0, pointHitRadius: 0, pointStyle: "line", order: 10,
+    },
+  ];
+  const opts = baseOptions(t);
+  opts.plugins.tooltip = {
+    ...opts.plugins.tooltip,
+    ...tooltipFor((e) => `CV ${fmt(cvMean(e))}  ·  LB ${fmt(lbPublic(e), 5)}  ·  差 ${fmt(lbPublic(e) - cvMean(e))}`),
+  };
+  opts.scales = {
+    x: axis(t, "CV", { type: "linear", min: lo, max: hi }, ticksFor(step)),
+    y: axis(t, "Public LB", { min: lo, max: hi }, ticksFor(step)),
+  };
+  return new Chart(canvas, { data: { datasets }, options: opts });
+}
+
+function renderCharts(list) {
+  const trendCanvas = el("canvas", { role: "img", "aria-label": "CV の推移。値は下の実験一覧でも確認できる" });
+  const lbCount = list.filter((e) => cvMean(e) != null && lbPublic(e) != null).length;
+  const lbCanvas = lbCount ? el("canvas", { role: "img", "aria-label": "CV と Public LB の相関。値は下の実験一覧でも確認できる" }) : null;
+  const doneCount = list.filter((e) => cvMean(e) != null).length;
+  // CDN に届かない環境でも一覧と系譜は使えるよう、グラフだけ代替表示にする
+  if (!window.Chart) {
+    const offline = el("div", { class: "empty" }, "グラフライブラリ（Chart.js）を CDN から読み込めませんでした");
+    return el("section", { class: "charts" }, el("div", { class: "card" }, offline), el("div", { class: "card" }, offline.cloneNode(true)));
+  }
+  const node = el(
+    "section",
+    { class: "charts" },
+    el(
+      "div", { class: "card" },
+      el("h2", {}, "CV の推移"),
+      el("p", { class: "caption" }, `折れ線はその時点までのベスト（${MAXIMIZE ? "大きいほど良い" : "小さいほど良い"}）`),
+      doneCount ? el("div", { class: "chart-box" }, trendCanvas) : el("div", { class: "empty" }, "完了した実験がありません")
+    ),
+    el(
+      "div", { class: "card" },
+      el("h2", {}, "CV と Public LB"),
+      el("p", { class: "caption" }, "対角線から離れるほど CV と LB が乖離している"),
+      lbCanvas ? el("div", { class: "chart-box" }, lbCanvas) : el("div", { class: "empty" }, "LB が記入された実験がありません")
+    )
+  );
+  requestAnimationFrame(() => {
+    const t = chartTheme();
+    if (doneCount) charts.push(renderTrendChart(trendCanvas, list, t));
+    if (lbCanvas) charts.push(renderCvLbChart(lbCanvas, list, t));
+  });
+  return node;
+}
+
+// ---------- table ----------
+const COLUMNS = [
+  { key: "exp_id", label: "ID", value: (e) => e.exp_id },
+  { key: "origin", label: "起案", value: (e) => e.origin },
+  { key: "parent", label: "親", value: (e) => e.parent ?? "" },
+  { key: "hypothesis", label: "仮説", value: (e) => e.hypothesis, text: true },
+  { key: "cv", label: "CV", value: cvMean, num: true },
+  { key: "cv_std", label: "std", value: (e) => e.cv?.std ?? null, num: true },
+  { key: "lb", label: "Public LB", value: lbPublic, num: true },
+  { key: "status", label: "状態", value: (e) => e.status },
+  { key: "conclusion", label: "結論", value: (e) => e.conclusion, text: true },
+];
+const SORTERS = { created_at: (e) => e.created_at, ...Object.fromEntries(COLUMNS.map((c) => [c.key, c.value])) };
+
+function sortList(list) {
+  const key = SORTERS[state.sortKey];
+  return [...list].sort((a, b) => {
+    const va = key(a), vb = key(b);
+    // 未記入は昇順・降順どちらでも末尾に置く。先頭に来ると記入済みの行が埋もれるため
+    if (va == null || va === "") return 1;
+    if (vb == null || vb === "") return -1;
+    return (va < vb ? -1 : va > vb ? 1 : 0) * state.sortDir;
+  });
+}
+
+function detailRow(e) {
+  const cv = e.cv;
+  const folds = cv
+    ? el(
+        "table", { class: "folds" },
+        el("tbody", {},
+          cv.folds.map((s, i) => el("tr", {}, el("td", { class: "dim" }, `fold ${i + 1}`), el("td", { class: "num" }, fmt(s)))),
+          el("tr", { class: "total" }, el("td", {}, "平均"), el("td", { class: "num" }, `${fmt(cv.mean)} ± ${fmt(cv.std)}`))
+        )
+      )
+    : el("p", { class: "dim" }, "スコアなし");
+  const meta = el(
+    "dl", { class: "meta" },
+    el("dt", {}, "モデル"), el("dd", {}, e.model),
+    el("dt", {}, "作成"), el("dd", {}, fmtDate(e.created_at, true)),
+    el("dt", {}, "commit"), el("dd", { class: "mono" }, e.git_hash),
+    el("dt", {}, "学習時間"), el("dd", {}, e.train_time_sec == null ? "—" : `${e.train_time_sec} 秒`),
+    el("dt", {}, "Private LB"), el("dd", {}, fmt(e.lb?.private, 5)),
+    el("dt", {}, "タグ"), el("dd", {}, e.tags.join(", ") || "—"),
+    e.wandb_url ? [el("dt", {}, "W&B"), el("dd", {}, el("a", { href: e.wandb_url, target: "_blank", rel: "noopener" }, "run を開く"))] : null
+  );
+  return el(
+    "tr", { class: "detail" },
+    el(
+      "td", { colspan: String(COLUMNS.length) },
+      el(
+        "div", { class: "detail-grid" },
+        el("div", {}, el("h3", {}, "fold 別スコア"), folds, el("h3", {}, "実行情報"), meta),
+        el("div", {},
+          el("h3", {}, "仮説"), el("p", {}, e.hypothesis),
+          el("h3", {}, "変更点"), el("p", {}, e.changes),
+          el("h3", {}, "結論"), el("p", { class: e.conclusion ? null : "dim" }, e.conclusion || "未記入")
+        ),
+        el("div", {}, el("h3", {}, "config"), el("pre", { class: "config" }, JSON.stringify(e.config, null, 2)))
+      )
+    )
+  );
+}
+
+function renderTable(list) {
+  const bestId = bestOf(list, cvMean)?.exp_id;
+  const toggle = (id) => { state.open.has(id) ? state.open.delete(id) : state.open.add(id); render(); };
+  const head = el(
+    "tr", {},
+    COLUMNS.map((c) => {
+      const active = state.sortKey === c.key;
+      return el(
+        "th",
+        { class: c.num ? "num" : null, "aria-sort": active ? (state.sortDir > 0 ? "ascending" : "descending") : null },
+        el(
+          "button",
+          {
+            type: "button",
+            onclick: () => {
+              state.sortDir = active ? -state.sortDir : c.num && MAXIMIZE ? -1 : 1;
+              state.sortKey = c.key;
+              render();
+            },
+          },
+          c.label,
+          el("span", { class: "arrow", "aria-hidden": "true" }, active ? (state.sortDir > 0 ? "▲" : "▼") : "")
+        )
+      );
+    })
+  );
+  const rows = sortList(list).flatMap((e) => {
+    const open = state.open.has(e.exp_id);
+    const row = el(
+      "tr",
+      {
+        class: `row${open ? " open" : ""}`, tabindex: "0", "aria-expanded": String(open), id: `row-${e.exp_id}`,
+        onclick: () => toggle(e.exp_id),
+        onkeydown: (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); toggle(e.exp_id); } },
+      },
+      el("td", { class: "mono" }, e.exp_id),
+      el("td", {}, originBadge(e.origin)),
+      el("td", { class: "mono dim" }, e.parent ?? "—"),
+      el("td", {}, el("div", { class: "clamp" }, e.hypothesis)),
+      el("td", { class: "num" }, fmt(cvMean(e)), e.exp_id === bestId ? el("span", { class: "best-pill" }, "best") : null),
+      el("td", { class: "num dim" }, fmt(e.cv?.std)),
+      el("td", { class: "num" }, fmt(lbPublic(e), 5)),
+      el("td", {}, statusBadge(e.status)),
+      el("td", {}, el("div", { class: e.conclusion ? "clamp" : "clamp dim" }, e.conclusion || "未記入"))
+    );
+    return open ? [row, detailRow(e)] : [row];
+  });
+  return el(
+    "section", {},
+    el("h2", {}, "実験一覧"),
+    el(
+      "div", { class: "table-wrap" },
+      el(
+        "table", {},
+        el("colgroup", {}, COLUMNS.map((c) => el("col", { class: c.text ? "c-text" : null }))),
+        el("thead", {}, head),
+        el("tbody", {}, rows.length ? rows : el("tr", {}, el("td", { colspan: String(COLUMNS.length), class: "dim" }, "条件に合う実験がありません")))
+      )
+    )
+  );
+}
+
+// ---------- lineage ----------
+function renderLineage(list) {
+  const visible = new Set(list.map((e) => e.exp_id));
+  const ids = new Set(EXPERIMENTS.map((e) => e.exp_id));
+  const children = new Map();
+  for (const e of EXPERIMENTS) {
+    const key = e.parent && ids.has(e.parent) ? e.parent : null;
+    if (!children.has(key)) children.set(key, []);
+    children.get(key).push(e);
+  }
+  const byId = (a, b) => a.exp_id.localeCompare(b.exp_id);
+  const branch = (parent) =>
+    el(
+      "ul", {},
+      (children.get(parent) ?? []).sort(byId).map((e) =>
+        el(
+          "li", {},
+          el(
+            "button",
+            {
+              type: "button", class: `tree-node${visible.has(e.exp_id) ? "" : " faded"}`,
+              onclick: () => {
+                state.open.add(e.exp_id);
+                if (!visible.has(e.exp_id)) { state.origin = "all"; state.tags.clear(); }
+                render();
+                document.getElementById(`row-${e.exp_id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+              },
+            },
+            el("span", { class: "mono" }, e.exp_id),
+            originBadge(e.origin),
+            el("span", { class: "num" }, fmt(cvMean(e))),
+            el("span", { class: "hyp" }, e.hypothesis)
+          ),
+          children.has(e.exp_id) ? branch(e.exp_id) : null
+        )
+      )
+    );
+  const tree = branch(null);
+  tree.className = "tree";
+  return el("section", {}, el("h2", {}, "系譜"), el("p", { class: "caption" }, "クリックで一覧の詳細を開く。絞り込みから外れた実験は薄く表示"), tree);
+}
+
+// ---------- render ----------
+function render() {
+  charts.forEach((c) => c.destroy());
+  charts = [];
+  const app = document.getElementById("app");
+  if (!EXPERIMENTS.length) {
+    app.replaceChildren(el("div", { class: "empty-all" }, "results.json がまだありません。実験を実行すると、ここに一覧とグラフが表示されます。"));
+    return;
+  }
+  const list = filtered();
+  app.replaceChildren(renderTiles(list), renderFilters(list), renderCharts(list), renderTable(list), renderLineage(list));
+}
+
+document.getElementById("subtitle").textContent =
+  `${PAYLOAD.competition} · ${METRIC.name}（${MAXIMIZE ? "大きいほど良い" : "小さいほど良い"}） · ${fmtDate(PAYLOAD.generated_at, true)} 生成`;
+if (window.Chart) Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", render);
+render();
+</script>
+</body>
+</html>
