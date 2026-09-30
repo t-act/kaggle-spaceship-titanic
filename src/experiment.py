@@ -12,19 +12,21 @@ from src.data import EXPERIMENTS_DIR, PROJECT_ROOT
 from src.metric import METRIC
 from src.results import RESULTS_FILE, validate
 
+# 実験の記録はコードではないため dirty 判定から外す。外さないと実験を続けて回すたびに、
+# 直前の実験の results.json やダッシュボードだけで -dirty が付いてしまう
+RECORD_PATHSPECS = [":!experiments/*/results.json", ":!dashboard", ":!NOTES.md"]
 
-def git_hash(exclude):
-    """HEAD の短縮ハッシュ。未コミットの変更があれば -dirty を付ける。
+
+def git_hash():
+    """HEAD の短縮ハッシュ。コードに未コミットの変更があれば -dirty を付ける。
 
     実行を止めずに記録だけ残す。止めると小さな確認実験のたびにコミットが必要になるため。
     """
     head = subprocess.run(
         ["git", "rev-parse", "--short", "HEAD"], cwd=PROJECT_ROOT, capture_output=True, text=True, check=True
     ).stdout.strip()
-    # 失敗した実験を再実行するとき、前回の results.json だけで dirty 扱いにならないよう除外する
-    pathspec = [f":!{exclude.relative_to(PROJECT_ROOT)}"] if exclude.is_relative_to(PROJECT_ROOT) else []
     status = subprocess.run(
-        ["git", "status", "--porcelain", "--", ".", *pathspec],
+        ["git", "status", "--porcelain", "--", ".", *RECORD_PATHSPECS],
         cwd=PROJECT_ROOT,
         capture_output=True,
         text=True,
@@ -61,7 +63,7 @@ class Experiment:
             "origin": cfg["origin"],
             "parent": cfg["parent"],
             "created_at": datetime.now().astimezone().isoformat(timespec="seconds"),
-            "git_hash": git_hash(exclude=self.results_path),
+            "git_hash": git_hash(),
             "hypothesis": cfg["hypothesis"],
             "changes": cfg["changes"],
             "model": cfg["model"],
