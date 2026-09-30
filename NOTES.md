@@ -4,6 +4,9 @@
 
 ## 仮説
 
+- expA008（claude, 2026-09-30）: 同行グループの特徴量は CatBoost（expA005）でも CV を上げる
+- expA007（claude, 2026-09-30）: 同行者は行動が似るため、グループの人数、グループ内の CryoSleep の割合と支出、同じ Cabin の人数を加えると CV が上がる
+- expA006（claude, 2026-09-30）: exp001 の LightGBM を新しい CV 方式で測り直し、LightGBM の比較基準にする
 - expA005（claude, 2026-09-30）: 固定分割 seed=123 は当たりの分割で CV が高めに出ている。分割 seed 3つの repeated CV で平均すると、CV はさらに下がって LB に近づく
 - expA004（claude, 2026-09-30）: 検証 fold を early stopping と最良時点のモデル選択に使っているため OOF が楽観的になっている。検証 fold を見ずに木の数を決めると、CV は下がって LB に近づく
 - expA003（claude, 2026-09-30）: LightGBM（expA001）と CatBoost（expA002）の予測確率を平均すると、誤り方の違いが打ち消し合って CV が単体を上回る
@@ -14,6 +17,8 @@
 
 ## 結論
 
+- グループ特徴量（2026-09-30）: LightGBM（expA007）で -0.0029、CatBoost（expA008）で -0.0006 と、どちらでも CV は上がらなかった。同じ fold どうしの差で見ても改善した fold は半分以下。本人の CryoSleep と支出から同行者の傾向がほぼ分かるため、新しい情報が少ないと考えられる
+- expA006（2026-09-30）: CV 0.8124 ± 0.0100。新しい CV 方式での LightGBM の比較基準。CatBoost（expA005）より 0.0028 低い
 - CV と LB の差（2026-09-30）: expA002 の差 0.0125 を分解した。early stopping に検証 fold を使うことによる楽観バイアスが約 0.0014（expA004）、固定分割 seed=123 の当たり外れが約 0.0042（expA005）。両方を除いた expA005 は CV 0.8152 で、expA002 の LB 0.80827 との差は 0.0069。train と test の分布の差は見られない（adversarial validation の AUC 0.522）。残る差は Public LB の標本誤差（σ 約 0.006〜0.0085）の範囲内で、CV 側では埋められない。LightGBM でも、分割 seed 0〜9 の平均 CV は 0.8125 で、seed=123 の 0.8156 は10通りのどれよりも高かった
 - expA005（2026-09-30）: CV 0.8152 ± 0.0059（repeated CV）。以後の比較基準。未提出。採否は未判断
 - expA004（2026-09-30）: CV 0.8194 ± 0.0126。early stopping の楽観バイアスの除去で -0.0014。採否は未判断
@@ -34,11 +39,12 @@
 Claude Code の改善案。採否は人間が判断する。
 
 - expA005 を提出して、CV と LB の差の説明を確かめる。説明が正しければ LB は 0.808 前後（expA002 と同程度）で、CV との差は 0.007 前後になる
-- 新しい CV 方式で LightGBM の比較基準を作る。今の方式の実験は expA005 だけなので、exp001 の LightGBM も同じ手順（内側の検証による early stopping と repeated CV）で再評価しておくと、以後の施策を比べやすい
-- グループの特徴量を試す。グループの人数、グループ内の CryoSleep の割合や支出合計、同じ Cabin の人数など。グループ単位の CV にしたので、グループの情報を使っても検証側に漏れない。今の特徴量は個人単位だけで、同行者の情報を使っていない
 - 採否の判断材料から LB を外す。同じモデルでも fold の割り当てだけで LB が 0.003 動くため、LB は CV との大きな乖離を検知する用途に限り、採否は CV で決める
 
 ### 実施済み（2026-09-30）
+
+- 新しい CV 方式での LightGBM の比較基準 → expA006
+- グループの特徴量 → expA007（LightGBM）、expA008（CatBoost）。どちらも効果なし
 
 - repeated group CV → `src/cv.py` を分割 seed 3つに変更し、expA005 で再評価
 - early stopping に検証 fold を使わない → CLAUDE.md のルール8に追加し、expA004 で実施
