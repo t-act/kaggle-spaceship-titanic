@@ -5,3 +5,6 @@ __pycache__/
 # Kaggle から取得するデータと生成物
 data/
 submissions/
+
+# CatBoost の学習ログ
+catboost_info/
