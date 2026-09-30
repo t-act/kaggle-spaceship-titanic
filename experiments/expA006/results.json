@@ -1,0 +1,83 @@
+{
+  "exp_id": "expA006",
+  "origin": "claude",
+  "parent": "expA001",
+  "created_at": "2026-09-30T21:52:36+09:00",
+  "git_hash": "f7b45f3",
+  "hypothesis": "exp001 の LightGBM を新しい CV 方式（内側の検証による early stopping と repeated CV）で測り直し、以後の LightGBM の施策の比較基準にする",
+  "changes": "expA001 と同じモデルと特徴量で、木の数を学習側の内側の検証で決めて学習し直す。CV を分割 seed 3つの repeated group CV に変更",
+  "model": "LightGBM",
+  "config": {
+    "features": [
+      "Age",
+      "TotalSpend",
+      "HomePlanet",
+      "CryoSleep",
+      "Destination",
+      "VIP",
+      "Deck",
+      "Num",
+      "Side",
+      "RoomService",
+      "FoodCourt",
+      "ShoppingMall",
+      "Spa",
+      "VRDeck"
+    ],
+    "logical_imputation": false,
+    "lgb": {
+      "boosting_type": "gbdt",
+      "objective": "binary",
+      "metric": "auc",
+      "learning_rate": 0.1,
+      "num_leaves": 16,
+      "n_estimators": 100000,
+      "random_state": 123,
+      "importance_type": "gain",
+      "verbose": -1
+    },
+    "early_stopping_rounds": 100,
+    "inner_splits": 5,
+    "inner_seed": 0
+  },
+  "metric": {
+    "name": "accuracy",
+    "direction": "maximize"
+  },
+  "cv": {
+    "scheme": "group-stratified-5fold-x3-seed012",
+    "mean": 0.8124186775809921,
+    "std": 0.009989128736989747,
+    "folds": [
+      0.7969018932874354,
+      0.8135788262370541,
+      0.8036845135290731,
+      0.8239355581127733,
+      0.824985607369027,
+      0.8084004602991944,
+      0.8091954022988506,
+      0.8055235903337169,
+      0.8188614146060954,
+      0.8250863060989643,
+      0.8136860264519838,
+      0.816561242093157,
+      0.8141542002301496,
+      0.8217366302472685,
+      0.7899884925201381
+    ]
+  },
+  "lb": {
+    "public": null,
+    "private": null
+  },
+  "train_time_sec": 17.0,
+  "status": "done",
+  "conclusion": "CV 0.8124 ± 0.0100。新しい CV 方式での LightGBM の比較基準。同じ方式の CatBoost（expA005、0.8152）より 0.0028 低い（同じ fold どうしの差の標準誤差 0.0016、15 fold 中 9 fold で CatBoost が上）。LightGBM で分割 seed 0〜9 を試したときの平均 0.8125 と一致し、固定分割の当たり外れが除けていることも確かめられた。採否は人間が判断する",
+  "tags": [
+    "baseline",
+    "lgbm",
+    "group-cv",
+    "honest-es",
+    "repeated-cv"
+  ]
+}
