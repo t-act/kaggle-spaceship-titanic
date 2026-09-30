@@ -1,0 +1,67 @@
+{
+  "exp_id": "exp002",
+  "origin": "human",
+  "parent": "exp001",
+  "created_at": "2026-09-30T21:11:20+09:00",
+  "git_hash": "28b83a9",
+  "hypothesis": "CatBoost に変え、モデルの seed 平均で予測を安定させると CV が改善する",
+  "changes": "notebooks/04_change_model を移植。モデルを CatBoost に変更し、seed 0/1/2 の予測確率を平均。CV 分割は固定分割に統一",
+  "model": "CatBoost",
+  "config": {
+    "features": [
+      "Age",
+      "TotalSpend",
+      "HomePlanet",
+      "CryoSleep",
+      "Destination",
+      "VIP",
+      "Deck",
+      "Num",
+      "Side",
+      "RoomService",
+      "FoodCourt",
+      "ShoppingMall",
+      "Spa",
+      "VRDeck"
+    ],
+    "logical_imputation": false,
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "catboost": {
+      "iterations": 10000,
+      "learning_rate": 0.05,
+      "eval_metric": "AUC",
+      "early_stopping_rounds": 200,
+      "verbose": 0
+    }
+  },
+  "metric": {
+    "name": "accuracy",
+    "direction": "maximize"
+  },
+  "cv": {
+    "mean": 0.8172096710475382,
+    "std": 0.0036591116361879322,
+    "folds": [
+      0.8102357676825762,
+      0.8171362852213916,
+      0.8205865439907993,
+      0.8187571921749137,
+      0.8193325661680092
+    ]
+  },
+  "lb": {
+    "public": null,
+    "private": null
+  },
+  "train_time_sec": 37.3,
+  "status": "done",
+  "conclusion": "CV 0.8172 ± 0.0037 で exp001 より +0.0013、fold 間のばらつきも小さい。ただし改善幅は fold の標準偏差より小さく、有意とは言い切れない。notebook 04 の OOF 0.8214 は fold 分割 seed も変えた OOF の平均なので、固定分割の本値とは比較できない。採否は人間が判断する",
+  "tags": [
+    "catboost",
+    "seed-averaging"
+  ]
+}
