@@ -1,0 +1,88 @@
+{
+  "exp_id": "expA008",
+  "origin": "claude",
+  "parent": "expA005",
+  "created_at": "2026-09-30T21:53:15+09:00",
+  "git_hash": "f7b45f3",
+  "hypothesis": "同行グループの特徴量は CatBoost（expA005）でも CV を上げる",
+  "changes": "expA005 に GroupSize, GroupCryoRate, GroupSpend, GroupSpendOthers, CabinSize を追加（expA007 と同じ定義）",
+  "model": "CatBoost",
+  "config": {
+    "features": [
+      "Age",
+      "TotalSpend",
+      "HomePlanet",
+      "CryoSleep",
+      "Destination",
+      "VIP",
+      "Deck",
+      "Num",
+      "Side",
+      "RoomService",
+      "FoodCourt",
+      "ShoppingMall",
+      "Spa",
+      "VRDeck",
+      "GroupSize",
+      "GroupCryoRate",
+      "GroupSpend",
+      "GroupSpendOthers",
+      "CabinSize"
+    ],
+    "logical_imputation": false,
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "inner_splits": 5,
+    "catboost": {
+      "iterations": 10000,
+      "learning_rate": 0.05,
+      "eval_metric": "AUC",
+      "early_stopping_rounds": 200,
+      "verbose": 0
+    }
+  },
+  "metric": {
+    "name": "accuracy",
+    "direction": "maximize"
+  },
+  "cv": {
+    "scheme": "group-stratified-5fold-x3-seed012",
+    "mean": 0.8146035149830566,
+    "std": 0.005302692439680821,
+    "folds": [
+      0.8060814687320711,
+      0.8112773302646721,
+      0.8111686816350029,
+      0.8141542002301496,
+      0.823258491652274,
+      0.8193325661680092,
+      0.8109195402298851,
+      0.8084004602991944,
+      0.8171362852213916,
+      0.8250863060989643,
+      0.8154111558366878,
+      0.8177113283496262,
+      0.8112773302646721,
+      0.8182863714778609,
+      0.8095512082853855
+    ]
+  },
+  "lb": {
+    "public": null,
+    "private": null
+  },
+  "train_time_sec": 202.4,
+  "status": "done",
+  "conclusion": "CV 0.8146 ± 0.0053 で expA005 より -0.0006（同じ fold どうしの差の標準誤差 0.0009、改善は 15 fold 中 7 fold）。CatBoost でもグループ特徴量の効果は見られず、差はノイズの範囲。仮説は支持されない。採否は人間が判断する",
+  "tags": [
+    "catboost",
+    "seed-averaging",
+    "group-cv",
+    "honest-es",
+    "repeated-cv",
+    "group-features"
+  ]
+}
