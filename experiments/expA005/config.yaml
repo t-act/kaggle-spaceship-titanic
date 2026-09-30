@@ -1,0 +1,34 @@
+origin: claude
+parent: expA004
+hypothesis: "固定分割 seed=123 は当たりの分割で CV が高めに出ている。分割 seed 3つの repeated CV で平均すると、CV はさらに下がって LB（expA002 は 0.80827）に近づく"
+changes: "expA004 と同じモデルで、CV を分割 seed 3つ（0, 1, 2）の repeated group CV に変更"
+model: CatBoost
+tags: [catboost, seed-averaging, group-cv, honest-es, repeated-cv]
+
+params:
+  features:
+    - Age
+    - TotalSpend
+    - HomePlanet
+    - CryoSleep
+    - Destination
+    - VIP
+    - Deck
+    - Num
+    - Side
+    - RoomService
+    - FoodCourt
+    - ShoppingMall
+    - Spa
+    - VRDeck
+  logical_imputation: false
+  # notebook では fold 分割の seed も 0/1/2 で変えていたが、CV を比較可能に保つため分割は固定し、モデルの seed だけを変える
+  seeds: [0, 1, 2]
+  # 学習側の 1/inner_splits を木の数を決めるための内側の検証に使う
+  inner_splits: 5
+  catboost:
+    iterations: 10000
+    learning_rate: 0.05
+    eval_metric: AUC
+    early_stopping_rounds: 200
+    verbose: 0
