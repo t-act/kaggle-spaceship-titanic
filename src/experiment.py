@@ -6,10 +6,12 @@ from datetime import datetime
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import yaml
 
-from src.data import EXPERIMENTS_DIR, PROJECT_ROOT
-from src.metric import METRIC
+from src.cv import CV_SCHEME
+from src.data import EXPERIMENTS_DIR, ID_COL, PROJECT_ROOT, TARGET
+from src.metric import METRIC, THRESHOLD
 from src.results import RESULTS_FILE, validate
 
 # 実験の記録はコードではないため dirty 判定から外す。外さないと実験を続けて回すたびに、
@@ -84,6 +86,7 @@ class Experiment:
 
     def record_cv(self, fold_scores):
         self.results["cv"] = {
+            "scheme": CV_SCHEME,
             "mean": float(np.mean(fold_scores)),
             "std": float(np.std(fold_scores)),
             "folds": [float(s) for s in fold_scores],
@@ -95,6 +98,11 @@ class Experiment:
 
     def save_submission(self, df):
         df.to_csv(self.dir / "submission.csv", index=False)
+
+    def save_test_predictions(self, ids, proba):
+        """提出ファイルに加えて確率も保存する。アンサンブルでは閾値で丸める前の確率を平均するため。"""
+        np.save(self.dir / "test_proba.npy", proba)
+        self.save_submission(pd.DataFrame({ID_COL: ids, TARGET: proba > THRESHOLD}))
 
     def __exit__(self, exc_type, exc, tb):
         self.results["train_time_sec"] = round(time.perf_counter() - self._started, 1)

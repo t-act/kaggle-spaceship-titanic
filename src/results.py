@@ -6,7 +6,7 @@ from pathlib import Path
 
 import jsonschema
 
-from src.cv import N_SPLITS
+from src.cv import CV_SCHEME, LEGACY_CV_SCHEMES, N_SPLITS
 
 RESULTS_FILE = "results.json"
 
@@ -59,9 +59,10 @@ RESULTS_SCHEMA = {
         },
         "cv": {
             "type": ["object", "null"],
-            "required": ["mean", "std", "folds"],
+            "required": ["scheme", "mean", "std", "folds"],
             "additionalProperties": False,
             "properties": {
+                "scheme": {"enum": [CV_SCHEME, *LEGACY_CV_SCHEMES]},
                 "mean": {"type": "number"},
                 "std": {"type": "number", "minimum": 0},
                 "folds": {"type": "array", "items": {"type": "number"}, "minItems": 1},

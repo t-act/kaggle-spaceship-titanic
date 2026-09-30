@@ -204,7 +204,11 @@ const METRIC = EXPERIMENTS.find((e) => e.metric)?.metric ?? { name: "score", dir
 const MAXIMIZE = METRIC.direction === "maximize";
 const better = (a, b) => (MAXIMIZE ? a > b : a < b);
 
-const state = { origin: "all", tags: new Set(), sortKey: "created_at", sortDir: -1, open: new Set() };
+// 分割方式が違う CV は比較できないため、既定では最新の実験と同じ方式だけを表示する
+const SCHEMES = [...new Set(EXPERIMENTS.map((e) => e.cv?.scheme).filter(Boolean))];
+const LATEST_SCHEME = [...EXPERIMENTS].filter((e) => e.cv).sort((a, b) => b.created_at.localeCompare(a.created_at))[0]?.cv.scheme;
+
+const state = { scheme: LATEST_SCHEME ?? "all", origin: "all", tags: new Set(), sortKey: "created_at", sortDir: -1, open: new Set() };
 
 // ---------- helpers ----------
 function el(tag, attrs = {}, ...children) {
@@ -248,6 +252,8 @@ function statusBadge(status) {
 function filtered() {
   return EXPERIMENTS.filter(
     (e) =>
+      // スコアのない実行中・失敗の実験は分割方式を持たないため、どの方式でも表示する
+      (state.scheme === "all" || !e.cv || e.cv.scheme === state.scheme) &&
       (state.origin === "all" || e.origin === state.origin) &&
       (state.tags.size === 0 || e.tags.some((t) => state.tags.has(t)))
   );
@@ -272,6 +278,12 @@ function renderTiles(list) {
 // ---------- filters ----------
 function renderFilters(list) {
   const allTags = [...new Set(EXPERIMENTS.flatMap((e) => e.tags))].sort();
+  const schemeChips = ["all", ...SCHEMES].map((s) =>
+    el("button", {
+      class: "chip", type: "button", "aria-pressed": String(state.scheme === s),
+      onclick: () => { state.scheme = s; render(); },
+    }, s === "all" ? "すべて" : s)
+  );
   const originChips = ["all", ...ORIGINS].map((o) =>
     el("button", {
       class: "chip", type: "button", "aria-pressed": String(state.origin === o),
@@ -287,6 +299,7 @@ function renderFilters(list) {
   return el(
     "div",
     { class: "filters", role: "group", "aria-label": "絞り込み" },
+    SCHEMES.length > 1 ? el("div", { class: "filter-group" }, el("span", { class: "filter-label" }, "CV 分割"), schemeChips) : null,
     el("div", { class: "filter-group" }, el("span", { class: "filter-label" }, "起案"), originChips),
     allTags.length ? el("div", { class: "filter-group" }, el("span", { class: "filter-label" }, "タグ"), tagChips) : null,
     el("div", { class: "filter-count" }, `${list.length} / ${EXPERIMENTS.length} 件を表示`)
@@ -491,6 +504,7 @@ function detailRow(e) {
   const meta = el(
     "dl", { class: "meta" },
     el("dt", {}, "モデル"), el("dd", {}, e.model),
+    el("dt", {}, "CV 分割"), el("dd", {}, e.cv?.scheme ?? "—"),
     el("dt", {}, "作成"), el("dd", {}, fmtDate(e.created_at, true)),
     el("dt", {}, "commit"), el("dd", { class: "mono" }, e.git_hash),
     el("dt", {}, "学習時間"), el("dd", {}, e.train_time_sec == null ? "—" : `${e.train_time_sec} 秒`),
@@ -601,7 +615,7 @@ function renderLineage(list) {
               type: "button", class: `tree-node${visible.has(e.exp_id) ? "" : " faded"}`,
               onclick: () => {
                 state.open.add(e.exp_id);
-                if (!visible.has(e.exp_id)) { state.origin = "all"; state.tags.clear(); }
+                if (!visible.has(e.exp_id)) { state.scheme = "all"; state.origin = "all"; state.tags.clear(); }
                 render();
                 document.getElementById(`row-${e.exp_id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
               },

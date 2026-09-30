@@ -1,6 +1,6 @@
 COMPETITION := spaceship-titanic
 
-.PHONY: setup data lab new train validate dashboard submit submissions
+.PHONY: setup data lab new train validate dashboard submit submissions sync-lb
 
 setup:
 	uv sync
@@ -33,6 +33,12 @@ dashboard:
 submit:
 	@test -n "$(EXP)" || { echo "例: make submit EXP=exp001"; exit 1; }
 	uv run kaggle competitions submit -c $(COMPETITION) -f experiments/$(EXP)/submission.csv -m "$(EXP)"
+	@echo "採点後に make sync-lb で results.json の lb を更新する"
 
 submissions:
 	uv run kaggle competitions submissions -c $(COMPETITION)
+
+# 提出履歴から、説明文が実験 ID の提出のスコアを results.json の lb に書き写し、ダッシュボードを更新する
+sync-lb:
+	uv run python scripts/sync_lb.py
+	$(MAKE) validate dashboard

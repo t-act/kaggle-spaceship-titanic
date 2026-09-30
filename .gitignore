@@ -7,6 +7,7 @@ data/
 
 # 実験の生成物（results.json だけを管理する）
 experiments/*/oof.npy
+experiments/*/test_proba.npy
 experiments/*/submission.csv
 submissions/
 

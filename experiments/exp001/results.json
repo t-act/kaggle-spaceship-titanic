@@ -43,6 +43,7 @@
     "direction": "maximize"
   },
   "cv": {
+    "scheme": "stratified-5fold-seed123",
     "mean": 0.8159439144357,
     "std": 0.00497123416702245,
     "folds": [
