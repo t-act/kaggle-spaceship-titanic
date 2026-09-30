@@ -1,0 +1,37 @@
+origin: human
+parent: expA005
+hypothesis: "欠損を確実に分かる値で埋めると、モデルが欠損を別の水準として扱わずに済み CV が上がる"
+changes: "HomePlanet と Side を同じグループの値で、CryoSleep を支出がある人は False で埋める"
+model: CatBoost
+tags: [catboost, seed-averaging, group-cv, honest-es, repeated-cv, imputation]
+
+params:
+  features:
+    - Age
+    - TotalSpend
+    - HomePlanet
+    - CryoSleep
+    - Destination
+    - VIP
+    - Deck
+    - Num
+    - Side
+    - RoomService
+    - FoodCourt
+    - ShoppingMall
+    - Spa
+    - VRDeck
+  logical_imputation: false
+  # HomePlanet と Side はグループ内で必ず一致する。CryoSleep はグループ内で一致しないため支出から決める
+  group_imputation: [HomePlanet, Side]
+  cryosleep_from_spend: true
+  # notebook では fold 分割の seed も 0/1/2 で変えていたが、CV を比較可能に保つため分割は固定し、モデルの seed だけを変える
+  seeds: [0, 1, 2]
+  # 学習側の 1/inner_splits を木の数を決めるための内側の検証に使う
+  inner_splits: 5
+  catboost:
+    iterations: 10000
+    learning_rate: 0.05
+    eval_metric: AUC
+    early_stopping_rounds: 200
+    verbose: 0
