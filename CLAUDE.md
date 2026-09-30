@@ -11,7 +11,7 @@ Kaggle Spaceship Titanic コンペの実験リポジトリ。ローカルで学�
 
 ## 構成
 
-- `src/`: 全実験で共通のコード。データ読み込み（`data.py`）、CV 分割（`cv.py`）、評価関数（`metric.py`）、results.json のスキーマ（`results.py`）、実行記録（`experiment.py`）
+- `src/`: 全実験で共通のコード。データ読み込み（`data.py`）、CV 分割（`cv.py`）、評価関数（`metric.py`）、確定済みの特徴量（`features.py`）、results.json のスキーマ（`results.py`）、実行記録（`experiment.py`）
 - `experiments/<exp_id>/`: 1実験1ディレクトリ。`config.yaml` と `train.py` を置き、実行すると `results.json` が出る。`oof.npy` と `test_proba.npy` はアンサンブルの入力になる（git 管理外）
 - `scripts/`: `validate_results.py`（検証）、`build_dashboard.py`（HTML 生成）、`new_experiment.py`（複製）、`sync_lb.py`（LB の記入）
 - `dashboard/index.html`: 生成物。ブラウザで直接開く
@@ -28,6 +28,7 @@ Kaggle Spaceship Titanic コンペの実験リポジトリ。ローカルで学�
 6. 実行前にコミットする。未コミットの変更があると `git_hash` に `-dirty` が付く
 7. `lb` は `make sync-lb` で提出履歴から書き写す。手では書き換えない
 8. 検証 fold は予測にだけ使う。early stopping や最良時点のモデル選択は、学習側をさらに分けた内側の検証で行う
+9. 特徴量は `src/features.py` の `build_features()` だけを使い、実験の中で足したり変えたりしない。モデルの改善と特徴量の改善を混ぜないため。特徴量を変えるときは人間の判断で `FEATURE_VERSION` を上げる
 
 ## コマンド
 
