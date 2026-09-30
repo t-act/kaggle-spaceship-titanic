@@ -22,11 +22,12 @@ Kaggle Spaceship Titanic コンペの実験リポジトリ。ローカルで学�
 
 1. 既存の実験ディレクトリを上書きしない。変更するときは `make new FROM=<親> ORIGIN=<起案者>` で新しい番号に複製する。実行済みの実験は `Experiment` が再実行を拒否する
 2. 人間の起案は `exp001` 形式、Claude Code の起案は `expA001` 形式。人間が指示した内容をそのまま実装する場合は human、Claude Code が自分で考えた施策は claude
-3. CV 分割は `src/cv.py` の `get_folds()` だけを使い、実験ごとに変えない。分割は PassengerId のグループ単位で、方式名は `results.json` の `cv.scheme` に残る。方式が違う実験の CV は比較しない
+3. CV 分割は `src/cv.py` の `get_repeats()` だけを使い、実験ごとに変えない。分割は PassengerId のグループ単位の 5 fold を、分割 seed 3つで繰り返す。OOF は分割ごとに持ち、`repeated_fold_scores()` で採点する。方式名は `results.json` の `cv.scheme` に残る。方式が違う実験の CV は比較しない
 4. 実行は `make train EXP=<exp_id>`。学習、検証、ダッシュボード更新までを1回で行う
 5. 実行後、`results.json` の `conclusion` に所見を書き、NOTES.md に仮説、結果の解釈、次の一手を追記する。採否は人間が追記する
 6. 実行前にコミットする。未コミットの変更があると `git_hash` に `-dirty` が付く
 7. `lb` は `make sync-lb` で提出履歴から書き写す。手では書き換えない
+8. 検証 fold は予測にだけ使う。early stopping や最良時点のモデル選択は、学習側をさらに分けた内側の検証で行う
 
 ## コマンド
 

@@ -6,7 +6,7 @@ from pathlib import Path
 
 import jsonschema
 
-from src.cv import CV_SCHEME, LEGACY_CV_SCHEMES, N_SPLITS
+from src.cv import FOLD_COUNTS
 
 RESULTS_FILE = "results.json"
 
@@ -62,7 +62,7 @@ RESULTS_SCHEMA = {
             "required": ["scheme", "mean", "std", "folds"],
             "additionalProperties": False,
             "properties": {
-                "scheme": {"enum": [CV_SCHEME, *LEGACY_CV_SCHEMES]},
+                "scheme": {"enum": list(FOLD_COUNTS)},
                 "mean": {"type": "number"},
                 "std": {"type": "number", "minimum": 0},
                 "folds": {"type": "array", "items": {"type": "number"}, "minItems": 1},
@@ -123,8 +123,9 @@ def validate(results, exp_dir, known_ids):
             warnings.append("conclusion が未記入")
     if cv is not None:
         folds = cv["folds"]
-        if len(folds) != N_SPLITS:
-            errors.append(f"cv.folds が {len(folds)} 件。src/cv.py の N_SPLITS={N_SPLITS} と一致しない")
+        expected = FOLD_COUNTS[cv["scheme"]]
+        if len(folds) != expected:
+            errors.append(f"cv.folds が {len(folds)} 件。方式 {cv['scheme']} の fold 数 {expected} と一致しない")
         mean = sum(folds) / len(folds)
         std = math.sqrt(sum((f - mean) ** 2 for f in folds) / len(folds))
         if not math.isclose(cv["mean"], mean, abs_tol=CV_TOLERANCE):

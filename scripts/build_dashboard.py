@@ -4,6 +4,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+from src.cv import N_SPLITS
 from src.data import EXPERIMENTS_DIR, PROJECT_ROOT
 from src.results import load_all
 
@@ -26,6 +27,7 @@ def main():
 
     payload = {
         "competition": COMPETITION,
+        "n_splits": N_SPLITS,
         "generated_at": datetime.now().astimezone().isoformat(timespec="seconds"),
         "experiments": [results for _, results, _, _ in report],
     }
