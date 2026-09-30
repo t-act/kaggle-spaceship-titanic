@@ -1,0 +1,22 @@
+origin: human
+parent: expA005
+hypothesis: "CatBoost の木の深さと L2 正則化を調整すると、既定値（depth 6、l2_leaf_reg 3）の expA005 より CV が上がる"
+changes: "外側の各 fold の中で、学習側を内側で分けた検証の AUC により depth と l2_leaf_reg を9通りから選び、選んだ値で学習し直す。特徴量は src/features.py の v1"
+model: CatBoost
+tags: [catboost, seed-averaging, group-cv, honest-es, repeated-cv, tuning]
+
+params:
+  seeds: [0, 1, 2]
+  # 学習側の 1/inner_splits を、パラメータと木の数を決めるための内側の検証に使う
+  inner_splits: 5
+  inner_seed: 0
+  catboost:
+    iterations: 10000
+    learning_rate: 0.05
+    eval_metric: AUC
+    early_stopping_rounds: 200
+    verbose: 0
+  # 外側の CV で選ぶと CV が楽観的になるため、外側の fold ごとに内側の検証で選ぶ
+  search:
+    depth: [4, 6, 8]
+    l2_leaf_reg: [1, 3, 10]
