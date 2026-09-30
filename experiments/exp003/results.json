@@ -1,0 +1,88 @@
+{
+  "exp_id": "exp003",
+  "origin": "human",
+  "parent": "expA005",
+  "created_at": "2026-09-30T22:04:48+09:00",
+  "git_hash": "8abc0c0",
+  "hypothesis": "欠損を確実に分かる値で埋めると、モデルが欠損を別の水準として扱わずに済み CV が上がる",
+  "changes": "HomePlanet と Side を同じグループの値で、CryoSleep を支出がある人は False で埋める",
+  "model": "CatBoost",
+  "config": {
+    "features": [
+      "Age",
+      "TotalSpend",
+      "HomePlanet",
+      "CryoSleep",
+      "Destination",
+      "VIP",
+      "Deck",
+      "Num",
+      "Side",
+      "RoomService",
+      "FoodCourt",
+      "ShoppingMall",
+      "Spa",
+      "VRDeck"
+    ],
+    "logical_imputation": false,
+    "group_imputation": [
+      "HomePlanet",
+      "Side"
+    ],
+    "cryosleep_from_spend": true,
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "inner_splits": 5,
+    "catboost": {
+      "iterations": 10000,
+      "learning_rate": 0.05,
+      "eval_metric": "AUC",
+      "early_stopping_rounds": 200,
+      "verbose": 0
+    }
+  },
+  "metric": {
+    "name": "accuracy",
+    "direction": "maximize"
+  },
+  "cv": {
+    "scheme": "group-stratified-5fold-x3-seed012",
+    "mean": 0.8141818834953958,
+    "std": 0.006116137490711202,
+    "folds": [
+      0.8072289156626506,
+      0.8135788262370541,
+      0.8151986183074266,
+      0.8147295742232451,
+      0.824985607369027,
+      0.8181818181818182,
+      0.8080459770114943,
+      0.8049482163406214,
+      0.8131109833237493,
+      0.8227848101265823,
+      0.81196089706728,
+      0.824036802760207,
+      0.8095512082853855,
+      0.8171362852213916,
+      0.8072497123130035
+    ]
+  },
+  "lb": {
+    "public": null,
+    "private": null
+  },
+  "train_time_sec": 198.8,
+  "status": "done",
+  "conclusion": "CV 0.8142 ± 0.0061 で expA005 より -0.0010（同じ fold どうしの差の標準誤差 0.0009、改善は 15 fold 中 5 fold）。HomePlanet 131 件、Side 137 件、CryoSleep 174 件を埋めたが、CV に効果は見られず、差はノイズの範囲。CryoSleep を埋めた train の 119 行でも正解率は 0.8824 → 0.8908 で1行分しか変わらない。CatBoost は欠損を \"nan\" という水準として扱い、支出の列から起きていることを既に読み取れていたと考えられる。採否は人間が判断する",
+  "tags": [
+    "catboost",
+    "seed-averaging",
+    "group-cv",
+    "honest-es",
+    "repeated-cv",
+    "imputation"
+  ]
+}
