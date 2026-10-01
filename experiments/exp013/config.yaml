@@ -1,0 +1,24 @@
+origin: human
+parent: expA005
+hypothesis: "同じ姓の train 乗客の Transported 率を加えると、本人の特徴量にない新しい情報になり CatBoost の CV が expA005 より上がる"
+changes: "v1 に SurnameRate を追加。fold ごとに学習側のラベルだけから計算し、同じグループのメンバーは除く"
+model: CatBoost
+tags: [catboost, group-cv, honest-es, repeated-cv, target-neighbor]
+
+params:
+  # src/features.py の EXTRA_FEATURES から選ぶ。v1 の14列は固定
+  extra_features: []
+  # fold ごとに学習側のラベルから計算する率（src/features.py の target_neighbor_features）
+  target_neighbor_features: [SurnameRate]
+  # 窓幅と平滑化は CV を見て選ぶと楽観的になるため、先に決めて固定する
+  cabin_window: 30
+  smoothing: 5
+  seeds: [0, 1, 2]
+  # 学習側の 1/inner_splits を木の数を決めるための内側の検証に使う
+  inner_splits: 5
+  catboost:
+    iterations: 10000
+    learning_rate: 0.05
+    eval_metric: AUC
+    early_stopping_rounds: 200
+    verbose: 0
