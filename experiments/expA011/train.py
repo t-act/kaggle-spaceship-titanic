@@ -8,7 +8,7 @@ from sklearn.preprocessing import FunctionTransformer, OneHotEncoder, StandardSc
 from src.cv import get_repeats
 from src.data import ID_COL, load_data
 from src.experiment import Experiment
-from src.features import CATEGORICAL_FEATURES, FEATURES, SPEND_SERVICES, build_features
+from src.features import CATEGORICAL_FEATURES, FEATURES, SPEND_SERVICES, build_features, to_catboost
 from src.metric import repeated_fold_scores
 
 NUMERIC = [c for c in FEATURES if c not in CATEGORICAL_FEATURES]
@@ -24,9 +24,7 @@ def make_model(params):
         SimpleImputer(strategy="median", add_indicator=True),
         StandardScaler(),
     )
-    categorical = make_pipeline(
-        SimpleImputer(strategy="constant", fill_value="missing"), OneHotEncoder(handle_unknown="ignore")
-    )
+    categorical = OneHotEncoder(handle_unknown="ignore")
     pre = ColumnTransformer([("num", numeric, NUMERIC), ("cat", categorical, CATEGORICAL_FEATURES)])
     return make_pipeline(pre, LogisticRegression(**params["logreg"]))
 
@@ -36,9 +34,8 @@ def main():
         params = exp.params
         train, test = load_data()
         x_train, y_train, x_test = build_features(train, test)
-        # one-hot に渡すため、category 型を欠損を保ったまま object 型に戻す
-        x_train = x_train.astype(dict.fromkeys(CATEGORICAL_FEATURES, object))
-        x_test = x_test.astype(dict.fromkeys(CATEGORICAL_FEATURES, object))
+        # VIP の bool と欠損が混ざると one-hot が型を揃えられないため、文字列にする。欠損は "nan" という1水準になる
+        x_train, x_test = to_catboost(x_train), to_catboost(x_test)
 
         repeats = get_repeats(train)
         oofs = np.zeros((len(repeats), len(x_train)))
