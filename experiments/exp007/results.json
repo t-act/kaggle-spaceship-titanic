@@ -52,7 +52,7 @@
     ]
   },
   "lb": {
-    "public": null,
+    "public": 0.80851,
     "private": null
   },
   "train_time_sec": 197.6,
