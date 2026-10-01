@@ -4,6 +4,7 @@
 グループの集計（expA007・expA008）と確実な値での欠損補完（exp003）は CV を上げなかったため入れていない。
 """
 
+import numpy as np
 import pandas as pd
 
 from src.data import ID_COL, TARGET
@@ -117,3 +118,64 @@ def build_features(train, test, extra=(), impute=False):
 def to_catboost(x):
     # CatBoost はカテゴリ列の NaN を受け付けないため文字列にする。NaN は "nan" という1水準になる
     return x.astype(dict.fromkeys(CATEGORICAL_FEATURES, str))
+
+
+TARGET_NEIGHBOR_FEATURES = ["CabinNeighborRate", "SurnameRate"]
+
+
+def target_neighbor_features(train, test, labeled, window, smoothing):
+    """train の正解ラベルを使う近傍の率を、train と test の全行について返す。fold ごとに呼ぶ。
+
+    labeled は率の計算に使ってよい train の行（学習側の行）の位置。検証側の行のラベルを使うと OOF が漏れるため。
+    同じグループのメンバーは常に除く。test では自分のグループのラベルは見えないため、それを再現する。
+    これで学習側の行が自分自身のラベルを使うことも防げる。
+    少ない件数の率が極端な値にならないよう、labeled 全体の率を smoothing 件分混ぜる。
+    """
+    cols = [ID_COL, "Cabin", "Name"]
+    df = pd.concat([train[cols], test[cols]], ignore_index=True)
+    y = pd.Series(np.nan, index=df.index)
+    y.iloc[labeled] = train[TARGET].iloc[labeled].astype(float).to_numpy()
+    prior = y.mean()
+    group = df[ID_COL].str.split("_").str[0]
+    cabin = df["Cabin"].str.split("/", expand=True)
+    deck, num, side = cabin[0], pd.to_numeric(cabin[1]), cabin[2]
+    surname = df["Name"].str.split().str[-1]
+    is_lab = y.notna()
+
+    def smooth(total, count):
+        return (total + prior * smoothing) / (count + smoothing)
+
+    # 姓: 同じ姓の合計から、同じグループの分を引く
+    by_surname = y.groupby(surname).agg(["sum", "count"])
+    by_surname_group = y.groupby([surname, group]).agg(["sum", "count"])
+    s_total = surname.map(by_surname["sum"]) - pd.MultiIndex.from_arrays([surname, group]).map(by_surname_group["sum"])
+    s_count = surname.map(by_surname["count"]) - pd.MultiIndex.from_arrays([surname, group]).map(
+        by_surname_group["count"]
+    )
+    surname_rate = pd.Series(smooth(np.asarray(s_total, float), np.asarray(s_count, float)), index=df.index)
+    surname_rate[surname.isna()] = np.nan
+
+    # Cabin 近傍: 同じ Deck・Side で Num が ±window 以内の行。累積和で数え、同じグループの分を引く
+    cabin_rate = pd.Series(np.nan, index=df.index)
+    for idx in df.groupby([deck, side]).groups.values():
+        idx = np.asarray(idx)
+        idx = idx[num.iloc[idx].notna().to_numpy()]
+        lab = idx[is_lab.iloc[idx].to_numpy()]
+        order = np.argsort(num.iloc[lab].to_numpy())
+        lab_num = num.iloc[lab].to_numpy()[order]
+        lab_y = y.iloc[lab].to_numpy()[order]
+        cum = np.concatenate([[0.0], np.cumsum(lab_y)])
+        q = num.iloc[idx].to_numpy()
+        lo = np.searchsorted(lab_num, q - window, side="left")
+        hi = np.searchsorted(lab_num, q + window, side="right")
+        total, count = cum[hi] - cum[lo], (hi - lo).astype(float)
+        lab_group = group.iloc[lab].to_numpy()[order]
+        q_group = group.iloc[idx].to_numpy()
+        for i in range(len(idx)):
+            same = lab_group[lo[i] : hi[i]] == q_group[i]
+            total[i] -= lab_y[lo[i] : hi[i]][same].sum()
+            count[i] -= same.sum()
+        cabin_rate.iloc[idx] = smooth(total, count)
+
+    out = pd.DataFrame({"CabinNeighborRate": cabin_rate, "SurnameRate": surname_rate})
+    return out.iloc[: len(train)].reset_index(drop=True), out.iloc[len(train) :].reset_index(drop=True)
