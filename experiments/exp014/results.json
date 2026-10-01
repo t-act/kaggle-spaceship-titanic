@@ -1,0 +1,72 @@
+{
+  "exp_id": "exp014",
+  "origin": "human",
+  "parent": "expA005",
+  "created_at": "2026-10-01T09:31:39+09:00",
+  "git_hash": "fc83c31",
+  "hypothesis": "Cabin 近傍と同じ姓の train 乗客の Transported 率を加えると、本人の特徴量にない新しい情報になり CatBoost の CV が expA005 より上がる",
+  "changes": "v1 に CabinNeighborRate, SurnameRate を追加。fold ごとに学習側のラベルだけから計算し、同じグループのメンバーは除く",
+  "model": "CatBoost",
+  "config": {
+    "extra_features": [],
+    "target_neighbor_features": [
+      "CabinNeighborRate",
+      "SurnameRate"
+    ],
+    "cabin_window": 30,
+    "smoothing": 5,
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "inner_splits": 5,
+    "catboost": {
+      "iterations": 10000,
+      "learning_rate": 0.05,
+      "eval_metric": "AUC",
+      "early_stopping_rounds": 200,
+      "verbose": 0
+    }
+  },
+  "metric": {
+    "name": "accuracy",
+    "direction": "maximize"
+  },
+  "cv": {
+    "scheme": "group-stratified-5fold-x3-seed012",
+    "mean": 0.8121882871978083,
+    "std": 0.007429633023491638,
+    "folds": [
+      0.8009179575444636,
+      0.8084004602991944,
+      0.8151986183074266,
+      0.812428078250863,
+      0.8203799654576857,
+      0.8118527042577676,
+      0.8040229885057472,
+      0.8135788262370541,
+      0.821161587119034,
+      0.8147295742232451,
+      0.8090856814261069,
+      0.8246118458884416,
+      0.7968929804372842,
+      0.81943645773433,
+      0.810126582278481
+    ]
+  },
+  "lb": {
+    "public": null,
+    "private": null
+  },
+  "train_time_sec": 198.5,
+  "status": "done",
+  "conclusion": "CabinNeighborRate と SurnameRate を追加。CV 0.8122 ± 0.0074 で expA005 より -0.0030（標準誤差 0.0019、改善は 15 fold 中 6 fold）。単独で下がる2列を合わせてさらに下がった。仮説は支持されない。採否は人間が判断する",
+  "tags": [
+    "catboost",
+    "group-cv",
+    "honest-es",
+    "repeated-cv",
+    "target-neighbor"
+  ]
+}
