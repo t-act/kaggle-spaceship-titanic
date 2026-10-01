@@ -1,0 +1,66 @@
+{
+  "exp_id": "expA012",
+  "origin": "claude",
+  "parent": "expA011",
+  "created_at": "2026-10-01T09:20:07+09:00",
+  "git_hash": "ae4c683",
+  "hypothesis": "小さな MLP は GBDT と誤り方が違うため、CatBoost との予測の相関が低くなる",
+  "changes": "ロジスティック回帰（expA011）と同じ前処理で、隠れ層 64-32 の MLP。早期終了は学習側から切り出した 10% で判定し、seed 3つを平均",
+  "model": "MLP",
+  "config": {
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "mlp": {
+      "hidden_layer_sizes": [
+        64,
+        32
+      ],
+      "alpha": 0.001,
+      "early_stopping": true,
+      "validation_fraction": 0.1,
+      "max_iter": 500
+    }
+  },
+  "metric": {
+    "name": "accuracy",
+    "direction": "maximize"
+  },
+  "cv": {
+    "scheme": "group-stratified-5fold-x3-seed012",
+    "mean": 0.7951245636886825,
+    "std": 0.006350129356695242,
+    "folds": [
+      0.7888697647733792,
+      0.7986191024165707,
+      0.7938975244674726,
+      0.7957422324510932,
+      0.7979274611398963,
+      0.7957422324510932,
+      0.7873563218390804,
+      0.7940161104718066,
+      0.7832087406555491,
+      0.810126582278481,
+      0.7935595169637722,
+      0.8050603795284647,
+      0.7922899884925202,
+      0.7935595169637722,
+      0.7968929804372842
+    ]
+  },
+  "lb": {
+    "public": null,
+    "private": null
+  },
+  "train_time_sec": 10.6,
+  "status": "done",
+  "conclusion": "CV 0.7951 ± 0.0064 で CatBoost より低い。CatBoost との予測確率の相関は 0.930、予測の一致率は 89.4%。重み 0.2 で混ぜると +0.0003（標準誤差 0.0005、改善は 15 fold 中 7 fold）、重み 0.1 で +0.0002（改善は 15 fold 中 10 fold）で、いずれもノイズの範囲。採否は人間が判断する",
+  "tags": [
+    "mlp",
+    "group-cv",
+    "repeated-cv",
+    "ensemble-member"
+  ]
+}
