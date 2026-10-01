@@ -356,18 +356,18 @@ function originDatasets(list, t, xy) {
     pointRadius: o === "claude" ? 7.5 : 6, pointHoverRadius: o === "claude" ? 9.5 : 8, pointHitRadius: 12,
   })).filter((d) => d.data.length);
 }
-function tooltipFor(scoreLine) {
-  return {
-    filter: (item) => item.raw && item.raw.exp,
-    callbacks: {
-      title: (items) => items[0].raw.exp.exp_id,
-      label: (item) => scoreLine(item.raw.exp),
-      afterLabel: (item) => {
-        const h = item.raw.exp.hypothesis;
-        return h.length > 40 ? h.slice(0, 40) + "…" : h;
-      },
-    },
+function tooltipFor(scoreLine, { withHypothesis = true } = {}) {
+  const callbacks = {
+    title: (items) => items[0].raw.exp.exp_id,
+    label: (item) => scoreLine(item.raw.exp),
   };
+  if (withHypothesis) {
+    callbacks.afterLabel = (item) => {
+      const h = item.raw.exp.hypothesis;
+      return h.length > 40 ? h.slice(0, 40) + "…" : h;
+    };
+  }
+  return { filter: (item) => item.raw && item.raw.exp, callbacks };
 }
 function paddedRange(values, minPad) {
   const lo = Math.min(...values), hi = Math.max(...values);
@@ -386,26 +386,43 @@ function niceRange(values, minPad) {
 
 function renderTrendChart(canvas, list, t) {
   const done = list.filter((e) => cvMean(e) != null).sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+  // 作成日時を横軸にすると続けて実行した実験が重なるため、実行順の通し番号で等間隔に並べる
+  const order = new Map(done.map((e, i) => [e.exp_id, i + 1]));
   const bestLine = [];
   let best = null;
   for (const e of done) {
     if (best == null || better(cvMean(e), best)) best = cvMean(e);
-    bestLine.push({ x: +new Date(e.created_at), y: best });
+    bestLine.push({ x: order.get(e.exp_id), y: best });
   }
-  const times = done.map((e) => +new Date(e.created_at));
-  const [xMin, xMax] = paddedRange(times, 5 * 60 * 1000);
   const [yMin, yMax, yStep] = niceRange(done.map(cvMean), 0.002);
   const datasets = [
-    ...originDatasets(done, t, (e) => ({ x: +new Date(e.created_at), y: cvMean(e) })),
+    ...originDatasets(done, t, (e) => ({ x: order.get(e.exp_id), y: cvMean(e) })),
     {
       type: "line", label: "ベスト推移", data: bestLine, stepped: true,
       borderColor: t.reference, borderWidth: 2, pointRadius: 0, pointHitRadius: 0, pointStyle: "line", order: 10,
     },
   ];
   const opts = baseOptions(t);
-  opts.plugins.tooltip = { ...opts.plugins.tooltip, ...tooltipFor((e) => `CV ${fmt(cvMean(e))}  ·  ${fmtDate(e.created_at)}`) };
+  opts.plugins.tooltip = { ...opts.plugins.tooltip, ...tooltipFor((e) => `CV ${fmt(cvMean(e))}`, { withHypothesis: false }) };
+  // render() がグラフを作り直すため、クリック処理は Chart.js のイベント処理が終わってから走らせる
+  opts.onClick = (_ev, els, chart) => {
+    const exp = els.length ? chart.data.datasets[els[0].datasetIndex].data[els[0].index].exp : null;
+    if (exp) setTimeout(() => jumpToRow(exp.exp_id));
+  };
+  opts.onHover = (ev, els, chart) => {
+    const hit = els.some((a) => chart.data.datasets[a.datasetIndex].data[a.index].exp);
+    ev.native.target.style.cursor = hit ? "pointer" : "default";
+  };
   opts.scales = {
-    x: axis(t, "作成日時", { type: "linear", min: xMin, max: xMax }, { maxTicksLimit: 6, callback: (v) => fmtDate(v) }),
+    x: axis(
+      t, "実行順",
+      {
+        type: "linear", min: 0.5, max: done.length + 0.5,
+        // 両端に半目盛りの余白を取ると目盛りが 0.5 刻みの位置に生成されるため、整数の位置に置き直す
+        afterBuildTicks: (scale) => { scale.ticks = done.map((_, i) => ({ value: i + 1 })); },
+      },
+      { autoSkip: true, maxRotation: 0, callback: (v) => done[v - 1]?.exp_id ?? "" }
+    ),
     y: axis(t, `CV (${METRIC.name})`, { min: yMin, max: yMax }, ticksFor(yStep)),
   };
   return new Chart(canvas, { data: { datasets }, options: opts });
@@ -605,6 +622,14 @@ function renderTable(list) {
   );
 }
 
+// 一覧の該当行の詳細を開いてスクロールする。絞り込みで隠れている実験は、絞り込みを解除してから開く
+function jumpToRow(id, clearFilters = false) {
+  state.open.add(id);
+  if (clearFilters) { state.scheme = "all"; state.origin = "all"; state.tags.clear(); }
+  render();
+  document.getElementById(`row-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
 // ---------- lineage ----------
 function renderLineage(list) {
   const visible = new Set(list.map((e) => e.exp_id));
@@ -626,12 +651,7 @@ function renderLineage(list) {
             "button",
             {
               type: "button", class: `tree-node${visible.has(e.exp_id) ? "" : " faded"}`,
-              onclick: () => {
-                state.open.add(e.exp_id);
-                if (!visible.has(e.exp_id)) { state.scheme = "all"; state.origin = "all"; state.tags.clear(); }
-                render();
-                document.getElementById(`row-${e.exp_id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-              },
+              onclick: () => jumpToRow(e.exp_id, !visible.has(e.exp_id)),
             },
             el("span", { class: "mono" }, e.exp_id),
             originBadge(e.origin),
