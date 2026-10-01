@@ -1,0 +1,60 @@
+{
+  "exp_id": "expA013",
+  "origin": "claude",
+  "parent": "expA005",
+  "created_at": "2026-10-01T09:20:21+09:00",
+  "git_hash": "ae4c683",
+  "hypothesis": "誤り方の違うロジスティック回帰と MLP を CatBoost と平均すると、CV が CatBoost 単体（expA005）を上回る",
+  "changes": "expA005（CatBoost）、expA011（ロジスティック回帰）、expA012（MLP）の OOF と test の予測確率を等重みで平均する。学習はしない",
+  "model": "Ensemble (CatBoost + LogisticRegression + MLP)",
+  "config": {
+    "members": [
+      "expA005",
+      "expA011",
+      "expA012"
+    ],
+    "weights": [
+      1,
+      1,
+      1
+    ]
+  },
+  "metric": {
+    "name": "accuracy",
+    "direction": "maximize"
+  },
+  "cv": {
+    "scheme": "group-stratified-5fold-x3-seed012",
+    "mean": 0.8055920089993092,
+    "std": 0.008071748577134575,
+    "folds": [
+      0.7997705106138842,
+      0.8072497123130035,
+      0.795048934945308,
+      0.80897583429229,
+      0.8128957973517559,
+      0.80897583429229,
+      0.7994252873563218,
+      0.8032220943613348,
+      0.79700977573318,
+      0.8204833141542003,
+      0.8021851638872916,
+      0.824036802760207,
+      0.8026467203682394,
+      0.8033352501437608,
+      0.7986191024165707
+    ]
+  },
+  "lb": {
+    "public": null,
+    "private": null
+  },
+  "train_time_sec": 1.1,
+  "status": "done",
+  "conclusion": "CV 0.8056 ± 0.0081 で CatBoost 単体（expA005、0.8152）より -0.0096。単体で弱いロジスティック回帰と MLP を等重みで混ぜたため全体が引き下げられた。仮説は支持されない。重みを軽くしても改善は 0.0003 以下でノイズの範囲のため、重みを OOF で調整する価値も薄い。採否は人間が判断する",
+  "tags": [
+    "ensemble",
+    "group-cv",
+    "repeated-cv"
+  ]
+}
