@@ -1,0 +1,19 @@
+origin: claude
+parent: expA005
+hypothesis: "test の予測を、train の 80% で学習した fold モデルの平均ではなく、train 全体で学習し直したモデルで作ると LB が上がる"
+changes: "expA005 と同じ手順で CV を測り、test の予測だけを train 全体で学習し直した CatBoost（seed 3つの平均）で作る"
+model: CatBoost
+tags: [catboost, group-cv, honest-es, repeated-cv, full-refit]
+
+params:
+  # src/features.py の EXTRA_FEATURES から選ぶ。v1 の14列は固定
+  extra_features: []
+  seeds: [0, 1, 2]
+  # 学習側の 1/inner_splits を木の数を決めるための内側の検証に使う
+  inner_splits: 5
+  catboost:
+    iterations: 10000
+    learning_rate: 0.05
+    eval_metric: AUC
+    early_stopping_rounds: 200
+    verbose: 0
