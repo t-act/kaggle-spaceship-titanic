@@ -1,0 +1,16 @@
+origin: claude
+parent: expA011
+hypothesis: "小さな MLP は GBDT と誤り方が違うため、CatBoost との予測の相関が低くなる"
+changes: "ロジスティック回帰（expA011）と同じ前処理で、隠れ層 64-32 の MLP。早期終了は学習側から切り出した 10% で判定し、seed 3つを平均"
+model: MLP
+tags: [mlp, group-cv, repeated-cv, ensemble-member]
+
+params:
+  seeds: [0, 1, 2]
+  # early_stopping は学習側から validation_fraction を切り出して判定する。検証 fold は使わない
+  mlp:
+    hidden_layer_sizes: [64, 32]
+    alpha: 0.001
+    early_stopping: true
+    validation_fraction: 0.1
+    max_iter: 500
