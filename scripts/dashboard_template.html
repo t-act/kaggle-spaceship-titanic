@@ -122,9 +122,14 @@ tr.row:hover td { background: var(--surface-soft); }
 tr.row.open td { background: var(--surface-soft); border-bottom-color: transparent; }
 .clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 col.c-text { width: 26%; }
+/* ラベルを数値の後ろに並べると右揃えの数値が左にずれるため、数値の左の余白に重ねて置く */
+.best-cell { position: relative; }
+/* 全行の CV セルにラベル分の余白を取り、ラベルが隣の列にはみ出さないようにする */
+td.cv-cell { padding-left: 64px; }
 .best-pill {
-  display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: var(--r-pill);
-  background: var(--primary); color: var(--canvas); font: 500 11px/1.5 var(--font-sans); vertical-align: 1px;
+  position: absolute; right: 100%; top: 50%; transform: translateY(-50%); margin-right: 6px;
+  padding: 1px 7px; border-radius: var(--r-pill);
+  background: var(--primary); color: var(--canvas); font: 500 11px/1.5 var(--font-sans);
 }
 
 .origin { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
@@ -599,7 +604,9 @@ function renderTable(list) {
       el("td", {}, originBadge(e.origin)),
       el("td", { class: "mono dim" }, e.parent ?? "—"),
       el("td", {}, el("div", { class: "clamp" }, e.hypothesis)),
-      el("td", { class: "num" }, fmt(cvMean(e)), e.exp_id === bestId ? el("span", { class: "best-pill" }, "best") : null),
+      el("td", { class: "num cv-cell" }, e.exp_id === bestId
+        ? el("span", { class: "best-cell" }, el("span", { class: "best-pill" }, "best"), fmt(cvMean(e)))
+        : fmt(cvMean(e))),
       el("td", { class: "num dim" }, fmt(e.cv?.std)),
       el("td", { class: "num" }, fmt(lbPublic(e), 5)),
       el("td", {}, statusBadge(e.status)),
