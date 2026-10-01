@@ -1,0 +1,71 @@
+{
+  "exp_id": "exp012",
+  "origin": "human",
+  "parent": "expA005",
+  "created_at": "2026-10-01T09:24:48+09:00",
+  "git_hash": "fc83c31",
+  "hypothesis": "同じ Deck・Side で Num が近い train 乗客の Transported 率を加えると、本人の特徴量にない新しい情報になり CatBoost の CV が expA005 より上がる",
+  "changes": "v1 に CabinNeighborRate を追加。fold ごとに学習側のラベルだけから計算し、同じグループのメンバーは除く",
+  "model": "CatBoost",
+  "config": {
+    "extra_features": [],
+    "target_neighbor_features": [
+      "CabinNeighborRate"
+    ],
+    "cabin_window": 30,
+    "smoothing": 5,
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "inner_splits": 5,
+    "catboost": {
+      "iterations": 10000,
+      "learning_rate": 0.05,
+      "eval_metric": "AUC",
+      "early_stopping_rounds": 200,
+      "verbose": 0
+    }
+  },
+  "metric": {
+    "name": "accuracy",
+    "direction": "maximize"
+  },
+  "cv": {
+    "scheme": "group-stratified-5fold-x3-seed012",
+    "mean": 0.8137971973911078,
+    "std": 0.005921320990959084,
+    "folds": [
+      0.8078026391279404,
+      0.8130034522439585,
+      0.8082901554404145,
+      0.8147295742232451,
+      0.8169257340241797,
+      0.8141542002301496,
+      0.8045977011494253,
+      0.8135788262370541,
+      0.8263369752731455,
+      0.8118527042577676,
+      0.8131109833237493,
+      0.8223116733755031,
+      0.806674338319908,
+      0.8223116733755031,
+      0.8112773302646721
+    ]
+  },
+  "lb": {
+    "public": null,
+    "private": null
+  },
+  "train_time_sec": 218.4,
+  "status": "done",
+  "conclusion": "CabinNeighborRate を追加。CV 0.8138 ± 0.0059 で expA005 より -0.0014（同じ fold どうしの差の標準誤差 0.0017、改善は 15 fold 中 4 fold）。検証側のラベルとの相関は 0.241 あるが、Deck・Side・Num の局所的な平均なので、CatBoost がこの3列の分割で既に表せている情報と重なり、ラベルから作る分の揺れだけが加わったと考えられる。仮説は支持されない。採否は人間が判断する",
+  "tags": [
+    "catboost",
+    "group-cv",
+    "honest-es",
+    "repeated-cv",
+    "target-neighbor"
+  ]
+}
