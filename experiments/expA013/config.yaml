@@ -1,0 +1,11 @@
+origin: claude
+parent: expA005
+hypothesis: "誤り方の違うロジスティック回帰と MLP を CatBoost と平均すると、CV が CatBoost 単体（expA005）を上回る"
+changes: "expA005（CatBoost）、expA011（ロジスティック回帰）、expA012（MLP）の OOF と test の予測確率を等重みで平均する。学習はしない"
+model: "Ensemble (CatBoost + LogisticRegression + MLP)"
+tags: [ensemble, group-cv, repeated-cv]
+
+params:
+  members: [expA005, expA011, expA012]
+  # 重みを OOF で最適化すると CV に過適合するため、等重みで効果を確かめる
+  weights: [1, 1, 1]
