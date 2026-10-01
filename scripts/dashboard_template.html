@@ -361,18 +361,26 @@ function originDatasets(list, t, xy) {
     pointRadius: o === "claude" ? 7.5 : 6, pointHoverRadius: o === "claude" ? 9.5 : 8, pointHitRadius: 12,
   })).filter((d) => d.data.length);
 }
-function tooltipFor(scoreLine, { withHypothesis = true } = {}) {
-  const callbacks = {
-    title: (items) => items[0].raw.exp.exp_id,
-    label: (item) => scoreLine(item.raw.exp),
+// マウスを乗せると ID と CV を出し、クリックで実験一覧の該当行へ移る
+function linkPointsToRows(opts) {
+  opts.plugins.tooltip = {
+    ...opts.plugins.tooltip,
+    filter: (item) => item.raw && item.raw.exp,
+    callbacks: {
+      title: (items) => items[0].raw.exp.exp_id,
+      label: (item) => `CV ${fmt(cvMean(item.raw.exp))}`,
+    },
   };
-  if (withHypothesis) {
-    callbacks.afterLabel = (item) => {
-      const h = item.raw.exp.hypothesis;
-      return h.length > 40 ? h.slice(0, 40) + "…" : h;
-    };
-  }
-  return { filter: (item) => item.raw && item.raw.exp, callbacks };
+  // render() がグラフを作り直すため、クリック処理は Chart.js のイベント処理が終わってから走らせる
+  opts.onClick = (_ev, els, chart) => {
+    const exp = els.length ? chart.data.datasets[els[0].datasetIndex].data[els[0].index].exp : null;
+    if (exp) setTimeout(() => jumpToRow(exp.exp_id));
+  };
+  opts.onHover = (ev, els, chart) => {
+    const hit = els.some((a) => chart.data.datasets[a.datasetIndex].data[a.index].exp);
+    ev.native.target.style.cursor = hit ? "pointer" : "default";
+  };
+  return opts;
 }
 function paddedRange(values, minPad) {
   const lo = Math.min(...values), hi = Math.max(...values);
@@ -407,17 +415,7 @@ function renderTrendChart(canvas, list, t) {
       borderColor: t.reference, borderWidth: 2, pointRadius: 0, pointHitRadius: 0, pointStyle: "line", order: 10,
     },
   ];
-  const opts = baseOptions(t);
-  opts.plugins.tooltip = { ...opts.plugins.tooltip, ...tooltipFor((e) => `CV ${fmt(cvMean(e))}`, { withHypothesis: false }) };
-  // render() がグラフを作り直すため、クリック処理は Chart.js のイベント処理が終わってから走らせる
-  opts.onClick = (_ev, els, chart) => {
-    const exp = els.length ? chart.data.datasets[els[0].datasetIndex].data[els[0].index].exp : null;
-    if (exp) setTimeout(() => jumpToRow(exp.exp_id));
-  };
-  opts.onHover = (ev, els, chart) => {
-    const hit = els.some((a) => chart.data.datasets[a.datasetIndex].data[a.index].exp);
-    ev.native.target.style.cursor = hit ? "pointer" : "default";
-  };
+  const opts = linkPointsToRows(baseOptions(t));
   opts.scales = {
     x: axis(
       t, "実行順",
@@ -443,11 +441,7 @@ function renderCvLbChart(canvas, list, t) {
       borderColor: t.axis, borderWidth: 1, pointRadius: 0, pointHitRadius: 0, pointStyle: "line", order: 10,
     },
   ];
-  const opts = baseOptions(t);
-  opts.plugins.tooltip = {
-    ...opts.plugins.tooltip,
-    ...tooltipFor((e) => `CV ${fmt(cvMean(e))}  ·  LB ${fmt(lbPublic(e), 5)}  ·  差 ${fmt(lbPublic(e) - cvMean(e))}`),
-  };
+  const opts = linkPointsToRows(baseOptions(t));
   opts.scales = {
     x: axis(t, "CV", { type: "linear", min: lo, max: hi }, ticksFor(step)),
     y: axis(t, "Public LB", { min: lo, max: hi }, ticksFor(step)),
