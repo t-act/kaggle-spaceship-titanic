@@ -1,0 +1,66 @@
+{
+  "exp_id": "expA009",
+  "origin": "claude",
+  "parent": "expA005",
+  "created_at": "2026-10-01T09:07:14+09:00",
+  "git_hash": "99eb2de",
+  "hypothesis": "test の予測を、train の 80% で学習した fold モデルの平均ではなく、train 全体で学習し直したモデルで作ると LB が上がる",
+  "changes": "expA005 と同じ手順で CV を測り、test の予測だけを train 全体で学習し直した CatBoost（seed 3つの平均）で作る",
+  "model": "CatBoost",
+  "config": {
+    "extra_features": [],
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "inner_splits": 5,
+    "catboost": {
+      "iterations": 10000,
+      "learning_rate": 0.05,
+      "eval_metric": "AUC",
+      "early_stopping_rounds": 200,
+      "verbose": 0
+    }
+  },
+  "metric": {
+    "name": "accuracy",
+    "direction": "maximize"
+  },
+  "cv": {
+    "scheme": "group-stratified-5fold-x3-seed012",
+    "mean": 0.8152165201996358,
+    "std": 0.005943747380830179,
+    "folds": [
+      0.8083763625932301,
+      0.8153049482163406,
+      0.8082901554404145,
+      0.8216340621403913,
+      0.8221070811744386,
+      0.8193325661680092,
+      0.8114942528735632,
+      0.807825086306099,
+      0.816561242093157,
+      0.8245109321058688,
+      0.8171362852213916,
+      0.8234617596319724,
+      0.8130034522439585,
+      0.8136860264519838,
+      0.8055235903337169
+    ]
+  },
+  "lb": {
+    "public": 0.80687,
+    "private": null
+  },
+  "train_time_sec": 215.9,
+  "status": "done",
+  "conclusion": "CV 0.8152 ± 0.0059 は expA005 と同じ（CV の手順が同じため）。test の予測を train 全体で学習し直したモデルで作り、LB 0.80687 で expA005 の 0.80780 より -0.0009。予測が変わったのは 4277 行中 86 行で、LB の差は Public LB の数行分しかなく、効果は確かめられない。採否は人間が判断する",
+  "tags": [
+    "catboost",
+    "group-cv",
+    "honest-es",
+    "repeated-cv",
+    "full-refit"
+  ]
+}
