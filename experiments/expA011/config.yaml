@@ -1,0 +1,12 @@
+origin: claude
+parent: expA005
+hypothesis: "ロジスティック回帰は GBDT と誤り方が違うため、単体の CV は低くても CatBoost との予測の相関が低くなる"
+changes: "v1 の特徴量で、支出を log1p、数値の欠損を中央値と欠損フラグ、カテゴリを one-hot にしたロジスティック回帰"
+model: LogisticRegression
+tags: [logreg, group-cv, repeated-cv, ensemble-member]
+
+params:
+  # 正則化の強さは固定する。外側の CV で選ぶと CV が楽観的になるため、まず既定値で相関を確かめる
+  logreg:
+    C: 1.0
+    max_iter: 2000
